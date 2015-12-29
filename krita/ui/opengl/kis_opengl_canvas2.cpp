@@ -39,6 +39,7 @@
 #include <QTransform>
 #include <QThread>
 #include <QFile>
+#include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
 #include <QMessageBox>
 
