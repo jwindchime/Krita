@@ -21,6 +21,7 @@
 #include <QWidget>
 #include <QPolygonF>
 #include <QTransform>
+#include <QPainter>
 
 #include <klocalizedstring.h>
 #include <QAction>

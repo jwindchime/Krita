@@ -37,7 +37,7 @@ class KisCanvas2;
 class KisDisplayColorConverter;
 class QOpenGLShaderProgram;
 class QPainterPath;
-
+class QPainter;
 
 /**
  * KisOpenGLCanvas is the widget that shows the actual image using OpenGL
