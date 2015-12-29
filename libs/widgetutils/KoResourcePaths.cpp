@@ -83,9 +83,9 @@ QString getInstallationPrefix() {
      QString bundlePath = QString::fromLatin1(pathPtr);
 
 //     qDebug() << "1" << bundlePath << (bundlePath + QString::fromLatin1("/Contents/MacOS/share"));
-     if (QFile(bundlePath + QString::fromLatin1("/Contents/MacOS/share")).exists()) {
+     if (QFile(bundlePath + QString::fromLatin1("/Contents/share")).exists()) {
 //         qDebug() << "running from a deployed bundle";
-         bundlePath += QString::fromLatin1("/Contents/MacOS/");
+         bundlePath += QString::fromLatin1("/Contents/share/");
      }
      else {
 //         qDebug() << "running from make install";
@@ -264,17 +264,33 @@ QString KoResourcePaths::findResourceInternal(const QString &type, const QString
 {
     QStringList aliases = d->aliases(type);
 
+    //qDebug() << "findResource aliases:" << aliases;
+
     QString resource = QStandardPaths::locate(d->mapTypeToQStandardPaths(type), fileName, QStandardPaths::LocateFile);
+    QDir installPath(getInstallationPrefix() + "../share/");
+    if (resource.isEmpty()) {
+        if (installPath.exists(fileName)) {
+            resource = installPath.filePath(fileName);
+        }
+    }
+
+    //qDebug() << "resources in install path:" << resource;
+
     if (resource.isEmpty()) {
         Q_FOREACH (const QString &alias, aliases) {
             resource = QStandardPaths::locate(d->mapTypeToQStandardPaths(type), alias + '/' + fileName, QStandardPaths::LocateFile);
+            if (resource.isEmpty()) {
+                if (installPath.exists(alias + '/' + fileName)) {
+                    resource = installPath.filePath(alias + '/' + fileName);
+                }
+            }
             if (!resource.isEmpty()) {
                 continue;
             }
         }
     }
     //Q_ASSERT(!resource.isEmpty());
-    //qDebug() << "findResource: type" << type << "filename" << fileName << "resource" << resource;
+    qDebug() << "findResource: type" << type << "filename" << fileName << "resource" << resource;
     return resource;
 }
 
