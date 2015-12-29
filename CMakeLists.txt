@@ -143,11 +143,7 @@ message(STATUS "Release build: ${RELEASE_BUILD}")
 #############
 ############
 
-if (APPLE)
-    set(USEOPENGL OFF)
-else()
-    option(USEOPENGL "Allow the use of OpenGL for Krita" ON)
-endif()
+option(USEOPENGL "Allow the use of OpenGL for Krita" ON)
 option(PACKAGERS_BUILD "Build support of multiple CPU architectures in one binary. Should be used by packagers only." OFF)
 
  #######################
