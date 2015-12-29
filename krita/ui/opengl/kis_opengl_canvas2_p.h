@@ -212,6 +212,14 @@ namespace Sync {
             k_glDeleteSync = (kis_glDeleteSync)ctx->getProcAddress("glDeleteSync");
             k_glClientWaitSync = (kis_glClientWaitSync)ctx->getProcAddress("glClientWaitSync");
         }
+#elif defined Q_OS_MAC
+        dbgUI << "check fence sync support" << KisOpenGL::supportsFenceSync();
+        if (KisOpenGL::supportsFenceSync()) {
+            k_glFenceSync  = (kis_glFenceSync)ctx->getProcAddress("glFenceSync");
+            k_glGetSynciv  = (kis_glGetSynciv)ctx->getProcAddress("glGetSynciv");
+            k_glDeleteSync = (kis_glDeleteSync)ctx->getProcAddress("glDeleteSync");
+            k_glClientWaitSync = (kis_glClientWaitSync)ctx->getProcAddress("glClientWaitSync");
+        }
 #endif
         if (k_glFenceSync  == 0 || k_glGetSynciv      == 0 ||
             k_glDeleteSync == 0 || k_glClientWaitSync == 0) {

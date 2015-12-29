@@ -112,6 +112,7 @@ private:
     struct Private;
     Private * const d;
 
+    GLuint *vboHandles;
 };
 
 #endif // HAVE_OPENGL

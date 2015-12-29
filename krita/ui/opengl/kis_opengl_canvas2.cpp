@@ -33,7 +33,6 @@
 #include "kis_config_notifier.h"
 #include "kis_debug.h"
 
-#include <QPainter>
 #include <QPainterPath>
 #include <QPointF>
 #include <QMatrix>
@@ -58,6 +57,8 @@ static bool OPENGL_SUCCESS = false;
 typedef void (*kis_glLogicOp)(int);
 static kis_glLogicOp ptr_glLogicOp = 0;
 
+typedef void (*PglGenVertexArrays) (GLsizei n,  GLuint *arrays);
+typedef void (*PglBindVertexArray) (GLuint array);
 
 struct KisOpenGLCanvas2::Private
 {
@@ -72,6 +73,7 @@ public:
     bool canvasInitialized{false};
 
     QVector3D vertices[6];
+    QVector<QVector3D> toolVertices;
     QVector2D texCoords[6];
 
     KisOpenGLImageTexturesSP openGLImageTextures;
@@ -137,6 +139,8 @@ KisOpenGLCanvas2::KisOpenGLCanvas2(KisCanvas2 *canvas,
 
     QSurfaceFormat format;
     format.setDepthBufferSize(24);
+    format.setVersion(3, 2);
+    format.setProfile(QSurfaceFormat::CoreProfile);
     setFormat(format);
 
     KisConfig cfg;
@@ -208,6 +212,26 @@ void KisOpenGLCanvas2::setWrapAroundViewingMode(bool value)
     update();
 }
 
+inline void rectToVertices(QVector3D* vertices, const QRectF &rc)
+{
+     vertices[0] = QVector3D(rc.left(),  rc.bottom(), 0.f);
+     vertices[1] = QVector3D(rc.left(),  rc.top(),    0.f);
+     vertices[2] = QVector3D(rc.right(), rc.bottom(), 0.f);
+     vertices[3] = QVector3D(rc.left(),  rc.top(), 0.f);
+     vertices[4] = QVector3D(rc.right(), rc.top(), 0.f);
+     vertices[5] = QVector3D(rc.right(), rc.bottom(),    0.f);
+}
+
+inline void rectToTexCoords(QVector2D* texCoords, const QRectF &rc)
+{
+    texCoords[0] = QVector2D(rc.left(), rc.bottom());
+    texCoords[1] = QVector2D(rc.left(), rc.top());
+    texCoords[2] = QVector2D(rc.right(), rc.bottom());
+    texCoords[3] = QVector2D(rc.left(), rc.top());
+    texCoords[4] = QVector2D(rc.right(), rc.top());
+    texCoords[5] = QVector2D(rc.right(), rc.bottom());
+}
+
 void KisOpenGLCanvas2::initializeGL()
 {
 //    KisConfig cfg;
@@ -236,14 +260,59 @@ void KisOpenGLCanvas2::initializeGL()
     KisConfig cfg;
     dbgUI << "OpenGL: Preparing to initialize OpenGL for KisCanvas";
     int glVersion = KisOpenGL::initializeContext(context());
+    context()->format().setVersion(3, 2);
+    context()->format().setProfile(QSurfaceFormat::CoreProfile);
     dbgUI << "OpenGL: Version found" << glVersion;
     initializeOpenGLFunctions();
     VSyncWorkaround::tryDisableVSync(context());
 
     d->openGLImageTextures->initGL(context()->functions());
     d->openGLImageTextures->generateCheckerTexture(createCheckersImage(cfg.checkSize()));
+    GLuint vao;
+    PglGenVertexArrays glGenVertexArrays = (PglGenVertexArrays) context()->getProcAddress("glGenVertexArrays");
+    PglBindVertexArray glBindVertexArray = (PglBindVertexArray) context()->getProcAddress("glBindVertexArray");
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    glEnableVertexAttribArray(PROGRAM_VERTEX_ATTRIBUTE);
+    glEnableVertexAttribArray(PROGRAM_TEXCOORD_ATTRIBUTE);
+
+    vboHandles = new GLuint[3];
+
     initializeCheckerShader();
     initializeDisplayShader();
+
+    KisCoordinatesConverter *converter = coordinatesConverter();
+    QTransform textureTransform;
+    QTransform modelTransform;
+    QRectF textureRect;
+    QRectF modelRect;
+
+    QRectF viewportRect = !d->wrapAroundMode ?
+        converter->imageRectInViewportPixels() :
+        converter->widgetToViewport(this->rect());
+
+    converter->getOpenGLCheckersInfo(viewportRect,
+                                     &textureTransform, &modelTransform, &textureRect, &modelRect, d->scrollCheckers);
+
+    rectToVertices(d->vertices, modelRect);
+
+    rectToTexCoords(d->texCoords, textureRect);
+
+    glGenBuffers(2, vboHandles);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vboHandles[0]);
+    glBufferData(GL_ARRAY_BUFFER, 6*3*sizeof(float), d->vertices, QOpenGLBuffer::StaticDraw);
+
+    //glBindBuffer(GL_ARRAY_BUFFER, vboHandles[2]);
+    //glBufferData(GL_ARRAY_BUFFER, 3*sizeof(float), d->toolVertices.constData(), QOpenGLBuffer::StreamDraw);
+
+    glVertexAttribPointer(PROGRAM_VERTEX_ATTRIBUTE, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vboHandles[1]);
+    glBufferData(GL_ARRAY_BUFFER, 6*2*sizeof(float), d->texCoords, QOpenGLBuffer::StaticDraw);
+
+    glVertexAttribPointer(PROGRAM_TEXCOORD_ATTRIBUTE, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     ptr_glLogicOp = (kis_glLogicOp)(context()->getProcAddress("glLogicOp"));
 
@@ -289,8 +358,8 @@ void KisOpenGLCanvas2::paintGL()
 
     KisOpenglCanvasDebugger::instance()->nofityPaintRequested();
 
-    QPainter gc(this);
-    gc.beginNativePainting();
+    //QPainter gc(this);
+    //gc.beginNativePainting();
 
     renderCanvasGL();
 
@@ -298,10 +367,10 @@ void KisOpenGLCanvas2::paintGL()
         Sync::deleteSync(d->glSyncObject);
     }
     d->glSyncObject = Sync::getSync();
-    gc.endNativePainting();
+    //gc.endNativePainting();
 
-    renderDecorations(&gc);
-    gc.end();
+    //renderDecorations(&gc);
+    //gc.end();
 
 
     if (!OPENGL_SUCCESS) {
@@ -353,31 +422,30 @@ void KisOpenGLCanvas2::paintToolOutline(const QPainterPath &path)
     // XXX: glLogicOp not in ES 2.0 -- it would be better to use another method.
     // It is defined in 3.1 core profile onward.
     glEnable(GL_COLOR_LOGIC_OP);
+
     if (ptr_glLogicOp) {
         ptr_glLogicOp(GL_XOR);
     }
 
     // setup the array of vertices
-    QVector<QVector3D> vertices;
+    //QVector<QVector3D> vertices;
     QList<QPolygonF> subPathPolygons = path.toSubpathPolygons();
     for (int i=0; i<subPathPolygons.size(); i++) {
         const QPolygonF& polygon = subPathPolygons.at(i);
         for (int j=0; j < polygon.count(); j++) {
             QPointF p = polygon.at(j);
-            vertices << QVector3D(p.x(), p.y(), 0.f);
+            d->toolVertices << QVector3D(p.x(), p.y(), 0.f);
         }
-        cursorShader->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
-        cursorShader->setAttributeArray(PROGRAM_VERTEX_ATTRIBUTE, vertices.constData());
 
-        glDrawArrays(GL_LINE_STRIP, 0, vertices.size());
+        glBindBuffer(GL_ARRAY_BUFFER, vboHandles[2]);
+        glBufferData(GL_ARRAY_BUFFER, 3*d->toolVertices.size()*sizeof(float), d->toolVertices.constData(), QOpenGLBuffer::StreamDraw);
 
-        vertices.clear();
+        glDrawArrays(GL_LINE_STRIP, 0, d->toolVertices.size());
+        d->toolVertices.clear();
     }
 
     glDisable(GL_COLOR_LOGIC_OP);
-
     cursorShader->release();
-
 }
 
 bool KisOpenGLCanvas2::isBusy() const
@@ -388,29 +456,10 @@ bool KisOpenGLCanvas2::isBusy() const
     return isBusyStatus;
 }
 
-inline void rectToVertices(QVector3D* vertices, const QRectF &rc)
-{
-     vertices[0] = QVector3D(rc.left(),  rc.bottom(), 0.f);
-     vertices[1] = QVector3D(rc.left(),  rc.top(),    0.f);
-     vertices[2] = QVector3D(rc.right(), rc.bottom(), 0.f);
-     vertices[3] = QVector3D(rc.left(),  rc.top(), 0.f);
-     vertices[4] = QVector3D(rc.right(), rc.top(), 0.f);
-     vertices[5] = QVector3D(rc.right(), rc.bottom(),    0.f);
-}
-
-inline void rectToTexCoords(QVector2D* texCoords, const QRectF &rc)
-{
-    texCoords[0] = QVector2D(rc.left(), rc.bottom());
-    texCoords[1] = QVector2D(rc.left(), rc.top());
-    texCoords[2] = QVector2D(rc.right(), rc.bottom());
-    texCoords[3] = QVector2D(rc.left(), rc.top());
-    texCoords[4] = QVector2D(rc.right(), rc.top());
-    texCoords[5] = QVector2D(rc.right(), rc.bottom());
-}
-
 void KisOpenGLCanvas2::drawCheckers()
 {
     if (!d->checkerShader) {
+        dbgUI << "no checker shader, not drawing";
         return;
     }
 
@@ -430,7 +479,10 @@ void KisOpenGLCanvas2::drawCheckers()
     textureTransform *= QTransform::fromScale(d->checkSizeScale / KisOpenGLImageTextures::BACKGROUND_TEXTURE_SIZE,
                                               d->checkSizeScale / KisOpenGLImageTextures::BACKGROUND_TEXTURE_SIZE);
 
-    d->checkerShader->bind();
+    if (!d->checkerShader->bind()) {
+      qWarning() << "Could not bind checker shader";
+      return;
+    }
 
     QMatrix4x4 projectionMatrix;
     projectionMatrix.setToIdentity();
@@ -440,6 +492,7 @@ void KisOpenGLCanvas2::drawCheckers()
     QMatrix4x4 modelMatrix(modelTransform);
     modelMatrix.optimize();
     modelMatrix = projectionMatrix * modelMatrix;
+
     d->checkerShader->setUniformValue(d->checkerUniformLocationModelViewProjection, modelMatrix);
 
     QMatrix4x4 textureMatrix(textureTransform);
@@ -447,12 +500,14 @@ void KisOpenGLCanvas2::drawCheckers()
 
     //Setup the geometry for rendering
     rectToVertices(d->vertices, modelRect);
-    d->checkerShader->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
-    d->checkerShader->setAttributeArray(PROGRAM_VERTEX_ATTRIBUTE, d->vertices);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vboHandles[0]);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, 3*6*sizeof(float), d->vertices);
 
     rectToTexCoords(d->texCoords, textureRect);
-    d->checkerShader->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
-    d->checkerShader->setAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE, d->texCoords);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vboHandles[1]);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, 2*6*sizeof(float), d->texCoords);
 
      // render checkers
     glActiveTexture(GL_TEXTURE0);
@@ -469,13 +524,14 @@ void KisOpenGLCanvas2::drawImage()
     if (!d->displayShader) {
         return;
     }
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     KisCoordinatesConverter *converter = coordinatesConverter();
 
-    d->displayShader->bind();
+    if (!d->displayShader->bind()) {
+        dbgUI << "displayShader failed to bind!";
+    }
 
     QMatrix4x4 projectionMatrix;
     projectionMatrix.setToIdentity();
@@ -559,18 +615,28 @@ void KisOpenGLCanvas2::drawImage()
             QRectF modelRect(tile->tileRectInImagePixels().translated(tileWrappingTranslation.x(), tileWrappingTranslation.y()));
 
             //Setup the geometry for rendering
+
             rectToVertices(d->vertices, modelRect);
-            d->displayShader->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
-            d->displayShader->setAttributeArray(PROGRAM_VERTEX_ATTRIBUTE, d->vertices);
+
+            glBindBuffer(GL_ARRAY_BUFFER, vboHandles[0]);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, 3*6*sizeof(float), d->vertices);
 
             rectToTexCoords(d->texCoords, textureRect);
-            d->displayShader->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
-            d->displayShader->setAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE, d->texCoords);
+            glBindBuffer(GL_ARRAY_BUFFER, vboHandles[1]);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, 2*6*sizeof(float), d->texCoords);
 
             if (d->displayFilter) {
                 glActiveTexture(GL_TEXTURE0 + 1);
+
+                dbgUI << "glActiveTexture" << glGetError();
+
                 glBindTexture(GL_TEXTURE_3D, d->displayFilter->lutTexture());
+
+                dbgUI << "bindTexture" << glGetError();
+
                 d->displayShader->setUniformValue(d->displayUniformLocationTexture1, 1);
+
+                dbgUI << "setUniformValue" << glGetError();
             }
 
             int currentLodPlane = tile->currentLodPlane();
@@ -584,18 +650,25 @@ void KisOpenGLCanvas2::drawImage()
 
             if (currentLodPlane) {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+
+                dbgUI << "texparameteri lod" << glGetError();
             } else if (SCALE_MORE_OR_EQUAL_TO(scaleX, scaleY, 2.0)) {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
                 switch(d->filterMode) {
                 case KisTextureTile::NearestFilterMode:
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+                    dbgUI << "texparameteri nearest" << glGetError();
+
                     break;
                 case KisTextureTile::BilinearFilterMode:
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+                    dbgUI << "texparameteri bilinear" << glGetError();
+
                     break;
                 case KisTextureTile::TrilinearFilterMode:
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -673,7 +746,7 @@ QByteArray KisOpenGLCanvas2::buildFragmentShader()
 
     QString filename = "highq_downscale.frag";
     // FIXME is this necessary?
-    shaderText.append("#version 130\n");
+    shaderText.append("#version 330\n");
 
     if (haveDisplayFilter) {
         shaderText.append("#define USE_OCIO\n");
