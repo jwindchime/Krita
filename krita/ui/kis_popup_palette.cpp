@@ -33,6 +33,7 @@
 #include <QQueue>
 #include <QMenu>
 #include <QWhatsThis>
+#include <QDebug>
 #include <math.h>
 #include "kis_signal_compressor.h"
 #include <QApplication>
@@ -99,7 +100,9 @@ KisPopupPalette::KisPopupPalette(KisFavoriteResourceManager* manager, const KoCo
     m_triangleColorSelector->resize(136, 136);
     m_triangleColorSelector->setVisible(true);
 
-    setAutoFillBackground(true);
+    QRegion maskedRegion(0, 0, 136, 136, QRegion::Ellipse );
+    m_triangleColorSelector->setMask(maskedRegion);
+
     setAttribute(Qt::WA_ContentsPropagated, true);
     //setAttribute(Qt::WA_TranslucentBackground, true);
 
@@ -243,14 +246,6 @@ QSize KisPopupPalette::sizeHint() const
 
 void KisPopupPalette::resizeEvent(QResizeEvent*)
 {
-    int side = qMin(width(), height());
-    int fgball = 66;
-    int sball = 40;
-    QRegion maskedRegion(width() / 2 - side / 2, height() / 2 - side / 2, side, side, QRegion::Ellipse);
-    maskedRegion = maskedRegion.united( QRegion(50 - fgball / 2, 32 - fgball / 2 , fgball, fgball, QRegion::Ellipse) );
-    maskedRegion = maskedRegion.united( QRegion(24 - (fgball - 20 ) / 2, 60 - (fgball - 20 ) / 2 , (fgball - 20 ), (fgball - 20 ), QRegion::Ellipse) );
-    maskedRegion = maskedRegion.united( QRegion(width() / 2 + side / 2 - sball, height() / 2 + side / 2 - sball, sball , sball, QRegion::Ellipse) );
-    setMask(maskedRegion);
 }
 
 void KisPopupPalette::paintEvent(QPaintEvent* e)
@@ -259,8 +254,9 @@ void KisPopupPalette::paintEvent(QPaintEvent* e)
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.fillRect(e->rect(), palette().brush(QPalette::Window));
     painter.translate(width() / 2, height() / 2);
+
+
 
     //painting background color
     QPainterPath bgColor;
@@ -275,6 +271,22 @@ void KisPopupPalette::paintEvent(QPaintEvent* e)
     painter.drawPath(fgColor);
 
 
+    // create an ellipse for the background that is slightly
+    // smaller than the clipping mask. This will prevent aliasing
+    QPainterPath backgroundContainer;
+
+    qreal backgroundWidth = (qreal)(e->rect().width() );
+    qreal backgroundHeight = (qreal)(e->rect().height() );
+
+    backgroundContainer.addEllipse( (-backgroundWidth/2 +1), (-backgroundHeight/2 +1),
+                                          backgroundWidth - 3 , backgroundHeight - 3 );
+    painter.fillPath(backgroundContainer,palette().brush(QPalette::Window));
+    painter.drawPath(backgroundContainer);
+
+
+
+
+
     //painting favorite brushes
     QList<QImage> images(m_resourceManager->favoritePresetImages());
 
@@ -287,7 +299,7 @@ void KisPopupPalette::paintEvent(QPaintEvent* e)
         painter.setClipPath(path);
 
         QRect bounds = path.boundingRect().toAlignedRect();
-        painter.drawImage(bounds.topLeft(), images.at(pos).scaled(bounds.size(), Qt::KeepAspectRatioByExpanding));
+        painter.drawImage(bounds.topLeft() , images.at(pos).scaled(bounds.size() , Qt::KeepAspectRatioByExpanding));
         painter.restore();
     }
     if (hoveredPreset() > -1) {
@@ -353,7 +365,17 @@ void KisPopupPalette::paintEvent(QPaintEvent* e)
         }
     }
 
+
+    //painting configure background, then icon
+    QPainterPath configureContainer;
     int side = qMin(width(), height());
+
+
+    configureContainer.addEllipse( side / 2 - 38 , side / 2 - 38 , 35 , 35 );
+    painter.fillPath(configureContainer,palette().brush(QPalette::Window));
+    painter.drawPath(configureContainer);
+
+
     QPixmap settingIcon = KisIconUtils::loadIcon("configure").pixmap(QSize(22,22));
     painter.drawPixmap(side / 2 - 40 + 9, side / 2 - 40 + 9, settingIcon);
     
