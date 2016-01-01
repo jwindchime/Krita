@@ -124,11 +124,14 @@ cmake --build . --config RelWithDebInfo --target ext_tiff
 cmake --build . --config RelWithDebInfo --target ext_vc
 cmake --build . --config RelWithDebInfo --target ext_libraw
 cmake --build . --config RelWithDebInfo --target ext_openjpeg
+cmake --build . --config RelWithDebInfo --target ext_gsl
 
 On Windows
 
 cmake --build . --config RelWithDebInfo --target ext_freetype
 cmake --build . --config RelWithDebInfo --target ext_poppler
+
+On Windows and OSX
 
 cmake --build . --config RelWithDebInfo --target ext_kwindowsystem
 

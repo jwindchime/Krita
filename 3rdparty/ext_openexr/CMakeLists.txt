@@ -4,10 +4,10 @@ ExternalProject_Add( ext_openexr
         URL http://files.kde.org/krita/build/dependencies/openexr-2.2.0.tar.gz
         URL_MD5 b64e931c82aa3790329c21418373db4e
         
-        PATCH_COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/openexr.diff
+        #PATCH_COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/openexr.diff
 
         INSTALL_DIR ${PREFIX_ext_openexr}
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${PREFIX_ext_openexr} -DILMBASE_PACKAGE_PREFIX=${PREFIX_ext_openexr} -DCMAKE_BUILD_TYPE=${GLOBAL_BUILD_TYPE} ${GLOBAL_PROFILE} -DNAMESPACE_VERSIONING=OFF
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${PREFIX_ext_openexr} -DILMBASE_PACKAGE_PREFIX=${PREFIX_ext_openexr} -DCMAKE_BUILD_TYPE=${GLOBAL_BUILD_TYPE} -DNAMESPACE_VERSIONING=OFF
             
         UPDATE_COMMAND ""
         ALWAYS 0
