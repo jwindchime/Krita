@@ -50,7 +50,9 @@ endif()
 
 if (APPLE)
     set(APPLE_SUPPRESS_X11_WARNING TRUE)
-    set(CMAKE_MACOSX_RPATH ON)
+    set(KDE_SKIP_RPATH_SETTINGS TRUE)
+    set(CMAKE_MACOSX_RPATH 1)
+    set(BUILD_WITH_INSTALL_RPATH 1)
 endif ()
 
 # QT5TODO: remove KDE4_BUILD_TESTS once all kde4_add_unit_test have been converted
