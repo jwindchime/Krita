@@ -75,7 +75,6 @@
 #include "kis_selection_mask.h"
 #include "kis_config.h"
 #include "KisView.h"
-#include "kis_node_juggler_compressed.h"
 #include "krita_utils.h"
 
 #include "ui_wdglayerbox.h"
@@ -188,6 +187,7 @@ KisLayerBox::KisLayerBox()
     m_removeAction->setActivationFlags(KisAction::ACTIVE_NODE);
     m_removeAction->setActivationConditions(KisAction::ACTIVE_NODE_EDITABLE);
     m_removeAction->setObjectName("remove_layer");
+    m_removeAction->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_Delete));
     connect(m_removeAction, SIGNAL(triggered()), this, SLOT(slotRmClicked()));
     m_actions.append(m_removeAction);
 
@@ -196,7 +196,7 @@ KisLayerBox::KisLayerBox()
     action->setActivationFlags(KisAction::ACTIVE_NODE);
     action->setActivationConditions(KisAction::ACTIVE_NODE_EDITABLE);
     action->setObjectName("move_layer_up");
-    action->setShortcut(Qt::CTRL + Qt::Key_PageUp);
+    action->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_PageUp));
     connect(action, SIGNAL(triggered()), this, SLOT(slotRaiseClicked()));
     m_actions.append(action);
 
@@ -600,25 +600,13 @@ void KisLayerBox::slotRmClicked()
 void KisLayerBox::slotRaiseClicked()
 {
     if (!m_canvas) return;
-
-    if (!m_nodeJuggler) {
-        m_nodeJuggler = new KisNodeJugglerCompressed(kundo2_i18n("Move Nodes"), m_image, m_nodeManager, 1000);
-        m_nodeJuggler->setAutoDelete(true);
-    }
-
-    m_nodeJuggler->raiseNode(m_nodeManager->selectedNodes());
+    m_nodeManager->raiseNode();
 }
 
 void KisLayerBox::slotLowerClicked()
 {
     if (!m_canvas) return;
-
-    if (!m_nodeJuggler) {
-        m_nodeJuggler = new KisNodeJugglerCompressed(kundo2_i18n("Move Nodes"), m_image, m_nodeManager, 1000);
-        m_nodeJuggler->setAutoDelete(true);
-    }
-
-    m_nodeJuggler->lowerNode(m_nodeManager->selectedNodes());
+    m_nodeManager->lowerNode();
 }
 
 void KisLayerBox::slotPropertiesClicked()

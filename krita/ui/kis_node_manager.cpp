@@ -67,6 +67,7 @@
 #include "kis_sequential_iterator.h"
 #include "kis_transaction.h"
 #include "kis_node_selection_adapter.h"
+#include "kis_node_juggler_compressed.h"
 
 #include "processing/kis_mirror_processing_visitor.h"
 #include "KisView.h"
@@ -93,6 +94,7 @@ struct KisNodeManager::Private {
     QScopedPointer<KisNodeSelectionAdapter> nodeSelectionAdapter; 
 
     KisNodeList selectedNodes;
+    QPointer<KisNodeJugglerCompressed> nodeJuggler;
 
     bool activateNodeImpl(KisNodeSP node);
 
@@ -107,6 +109,7 @@ struct KisNodeManager::Private {
                            quint8 opacity);
 
     void mergeTransparencyMaskAsAlpha(bool writeToLayers);
+    KisNodeJugglerCompressed* lazyGetJuggler(const KUndo2MagicString &actionName);
 };
 
 bool KisNodeManager::Private::activateNodeImpl(KisNodeSP node)
@@ -455,6 +458,11 @@ void KisNodeManager::createNode(const QString & nodeType, bool quiet, KisPaintDe
 
 }
 
+KisLayerSP KisNodeManager::constructDefaultLayer()
+{
+    return m_d->layerManager.constructDefaultLayer();
+}
+
 KisLayerSP KisNodeManager::createPaintLayer()
 {
     KisNodeSP activeNode = this->activeNode();
@@ -678,83 +686,33 @@ void KisNodeManager::duplicateActiveNode()
     }
 }
 
+KisNodeJugglerCompressed* KisNodeManager::Private::lazyGetJuggler(const KUndo2MagicString &actionName)
+{
+    KisImageWSP image = view->image();
+
+    if (!nodeJuggler ||
+        (nodeJuggler &&
+         !nodeJuggler->canMergeAction(actionName))) {
+
+        nodeJuggler = new KisNodeJugglerCompressed(actionName, image, q, 1000);
+        nodeJuggler->setAutoDelete(true);
+    }
+
+    return nodeJuggler;
+}
+
 void KisNodeManager::raiseNode()
 {
-    // The user sees the layer stack topsy-turvy, as a tree with the
-    // root at the bottom instead of on top.
-    KisNodeSP node = activeNode();
-    if (node->inherits("KisLayer")) {
-        m_d->layerManager.layerLower();
-    } else if (node->inherits("KisMask")) {
-        m_d->maskManager.lowerMask();
-    }
+    KUndo2MagicString actionName = kundo2_i18n("Raise Nodes");
+    KisNodeJugglerCompressed *juggler = m_d->lazyGetJuggler(actionName);
+    juggler->raiseNode(selectedNodes());
 }
 
 void KisNodeManager::lowerNode()
 {
-    // The user sees the layer stack topsy-turvy, as a tree with the
-    // root at the bottom instead of on top.
-    KisNodeSP node = activeNode();
-
-    if (node->inherits("KisLayer")) {
-        m_d->layerManager.layerRaise();
-    } else if (node->inherits("KisMask")) {
-        m_d->maskManager.raiseMask();
-    }
-}
-
-void KisNodeManager::nodeToTop()
-{
-    KisNodeSP node = activeNode();
-    if (node->inherits("KisLayer")) {
-        m_d->layerManager.layerBack();
-    } else if (node->inherits("KisMask")) {
-        m_d->maskManager.maskToBottom();
-    }
-
-}
-
-void KisNodeManager::nodeToBottom()
-{
-    KisNodeSP node = activeNode();
-    if (node->inherits("KisLayer")) {
-        m_d->layerManager.layerLower();
-    } else if (node->inherits("KisMask")) {
-        m_d->maskManager.maskToTop();
-    }
-}
-
-bool scanForLastLayer(KisImageWSP image, KisNodeSP nodeToRemove)
-{
-    if (!dynamic_cast<KisLayer*>(nodeToRemove.data())) {
-        return false;
-    }
-
-    bool lastLayer = true;
-    KisNodeSP node = image->root()->firstChild();
-    while (node) {
-        if (node != nodeToRemove && dynamic_cast<KisLayer*>(node.data())) {
-            lastLayer = false;
-            break;
-        }
-        node = node->nextSibling();
-    }
-
-    return lastLayer;
-}
-
-/// Scan whether the node has a parent in the list of nodes
-bool scanForParent(KisNodeList nodeList, KisNodeSP node)
-{
-    KisNodeSP parent = node->parent();
-
-    while (parent) {
-        if (nodeList.contains(parent)) {
-            return true;
-        }
-        parent = parent->parent();
-    }
-    return false;
+    KUndo2MagicString actionName = kundo2_i18n("Lower Nodes");
+    KisNodeJugglerCompressed *juggler = m_d->lazyGetJuggler(actionName);
+    juggler->lowerNode(selectedNodes());
 }
 
 void KisNodeManager::removeSingleNode(KisNodeSP node)
@@ -763,41 +721,21 @@ void KisNodeManager::removeSingleNode(KisNodeSP node)
         return;
     }
 
-    if (scanForLastLayer(m_d->view->image(), node)) {
-        m_d->commandsAdapter.beginMacro(kundo2_i18n("Remove Last Layer"));
-        m_d->commandsAdapter.removeNode(node);
-        // An oddity, but this is required as for some reason, we can end up in a situation
-        // where our active node is still set to one of the layers removed above.
-        activeNode().clear();
-        createNode("KisPaintLayer");
-        m_d->commandsAdapter.endMacro();
-    } else {
-        m_d->commandsAdapter.removeNode(node);
-    }
+    KisNodeList nodes;
+    nodes << node;
+    removeSelectedNodes(nodes);
 }
 
-void KisNodeManager::removeSelectedNodes(KisNodeList selectedNodes)
+void KisNodeManager::removeSelectedNodes(KisNodeList nodes)
 {
-    m_d->commandsAdapter.beginMacro(kundo2_i18n("Remove Multiple Layers and Masks"));
-    Q_FOREACH (KisNodeSP node, selectedNodes) {
-        if (!scanForParent(selectedNodes, node)) {
-            removeSingleNode(node);
-        }
-    }
-    m_d->commandsAdapter.endMacro();
+    KUndo2MagicString actionName = kundo2_i18n("Remove Nodes");
+    KisNodeJugglerCompressed *juggler = m_d->lazyGetJuggler(actionName);
+    juggler->removeNode(nodes);
 }
 
 void KisNodeManager::removeNode()
 {
-    //do not delete root layer
-    if (m_d->selectedNodes.count() > 1) {
-        removeSelectedNodes(m_d->selectedNodes);
-    }
-    else {
-        removeSingleNode(activeNode());
-    }
-
-
+    removeSelectedNodes(selectedNodes());
 }
 
 void KisNodeManager::mirrorNodeX()
@@ -881,7 +819,6 @@ void KisNodeManager::rotate(double radians)
     m_d->layerManager.rotateLayer(radians);
 
 }
-
 
 void KisNodeManager::rotate180()
 {

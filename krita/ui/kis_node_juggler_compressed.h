@@ -22,13 +22,13 @@
 #include <QObject>
 #include <QScopedPointer>
 
-#include <kritadefaultdockers_export.h>
+#include <kritaui_export.h>
 #include <kundo2command.h>
 #include "kis_types.h"
 #include "kis_node_manager.h"
 
 
-class KRITADEFAULTDOCKERS_EXPORT KisNodeJugglerCompressed : public QObject
+class KRITAUI_EXPORT KisNodeJugglerCompressed : public QObject
 {
     Q_OBJECT
 public:
@@ -42,6 +42,9 @@ public:
 
     void lowerNode(const KisNodeList &nodes);
     void raiseNode(const KisNodeList &nodes);
+    void removeNode(const KisNodeList &nodes);
+
+    bool canMergeAction(const KUndo2MagicString &actionName);
 
 public Q_SLOTS:
     void end();
@@ -49,9 +52,11 @@ public Q_SLOTS:
 private Q_SLOTS:
     void slotUpdateTimeout();
     void slotEndStrokeRequested();
+    void slotCancelStrokeRequested();
 
 private:
     void startTimers();
+    void cleanup();
     KisNodeList sortAndFilterNodes(const KisNodeList &nodes);
 
 private:

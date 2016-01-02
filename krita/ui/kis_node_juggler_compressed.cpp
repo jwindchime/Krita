@@ -26,10 +26,12 @@
 #include "kis_image.h"
 #include "kis_processing_applicator.h"
 #include "commands/kis_image_layer_move_command.h"
+#include "commands/kis_image_layer_add_command.h"
 #include "kis_signal_compressor.h"
 #include "kis_command_utils.h"
 #include "kis_layer_utils.h"
 #include "kis_node_manager.h"
+#include "kis_layer.h"
 
 
 /**
@@ -85,14 +87,19 @@ struct MoveNodeStruct {
 
     void doRedoUpdates() {
         image->refreshGraphAsync(oldParent);
-        if (oldParent != newParent)
+        if (newParent && oldParent != newParent) {
             node->setDirty(image->bounds());
+        }
     }
 
     void doUndoUpdates() {
-        image->refreshGraphAsync(newParent);
-        if (oldParent != newParent)
+        if (newParent) {
+            image->refreshGraphAsync(newParent);
+        }
+
+        if (oldParent != newParent) {
             node->setDirty(image->bounds());
+        }
     }
 
     KisImageSP image;
@@ -359,10 +366,90 @@ private:
     bool m_lower;
 };
 
+struct RemoveLayers : private KisLayerUtils::RemoveNodeHelper, public KisCommandUtils::AggregateCommand {
+    RemoveLayers(BatchMoveUpdateDataSP updateData,
+                 KisNodeManager *nodeManager,
+                 KisImageSP image,
+                 const KisNodeList &nodes,
+                 KisNodeSP activeNode)
+        : m_updateData(updateData),
+          m_nodeManager(nodeManager),
+          m_image(image),
+          m_nodes(nodes),
+          m_activeNode(activeNode){}
+
+    void populateChildCommands() {
+        KisNodeList filteredNodes = m_nodes;
+        KisLayerUtils::filterMergableNodes(filteredNodes);
+
+        if (filteredNodes.isEmpty()) return;
+
+        Q_FOREACH (KisNodeSP node, filteredNodes) {
+            MoveNodeStructSP moveStruct = toQShared(new MoveNodeStruct(m_image, node, KisNodeSP(), KisNodeSP()));
+            m_updateData->addInitialUpdate(moveStruct);
+        }
+
+        const bool lastLayer = scanForLastLayer(m_image, filteredNodes);
+
+        addCommand(new KeepNodesSelectedCommand(filteredNodes, KisNodeList(),
+                                                m_activeNode, KisNodeSP(),
+                                                m_image, false));
+
+        safeRemoveMultipleNodes(filteredNodes, m_image);
+        if (lastLayer) {
+            KisLayerSP newLayer = m_nodeManager->constructDefaultLayer();
+            addCommand(new KisImageLayerAddCommand(m_image, newLayer,
+                                                   m_image->root(),
+                                                   KisNodeSP(),
+                                                   false, false));
+        }
+
+        addCommand(new KeepNodesSelectedCommand(filteredNodes, KisNodeList(),
+                                                m_activeNode, KisNodeSP(),
+                                                m_image, true));
+    }
+protected:
+    virtual void addCommandImpl(KUndo2Command *cmd) {
+        addCommand(cmd);
+    }
+
+    static bool scanForLastLayer(KisImageWSP image, KisNodeList nodesToRemove) {
+        bool removeLayers = false;
+        Q_FOREACH(KisNodeSP nodeToRemove, nodesToRemove) {
+            if (dynamic_cast<KisLayer*>(nodeToRemove.data())) {
+                removeLayers = true;
+                break;
+            }
+        }
+        if (!removeLayers) return false;
+
+        bool lastLayer = true;
+        KisNodeSP node = image->root()->firstChild();
+        while (node) {
+            if (!nodesToRemove.contains(node) &&
+                dynamic_cast<KisLayer*>(node.data())) {
+
+                lastLayer = false;
+                break;
+            }
+            node = node->nextSibling();
+        }
+
+        return lastLayer;
+    }
+private:
+    BatchMoveUpdateDataSP m_updateData;
+    KisNodeManager *m_nodeManager;
+    KisImageSP m_image;
+    KisNodeList m_nodes;
+    KisNodeSP m_activeNode;
+};
+
 struct KisNodeJugglerCompressed::Private
 {
-    Private(KisImageSP _image, KisNodeManager *_nodeManager, int _timeout)
-        : image(_image),
+    Private(const KUndo2MagicString &_actionName, KisImageSP _image, KisNodeManager *_nodeManager, int _timeout)
+        : actionName(_actionName),
+          image(_image),
           nodeManager(_nodeManager),
           compressor(_timeout, KisSignalCompressor::POSTPONE),
           selfDestructionCompressor(3 * _timeout, KisSignalCompressor::POSTPONE),
@@ -371,6 +458,7 @@ struct KisNodeJugglerCompressed::Private
           isStarted(false)
     {}
 
+    KUndo2MagicString actionName;
     KisImageSP image;
     KisNodeManager *nodeManager;
     QScopedPointer<KisProcessingApplicator> applicator;
@@ -385,9 +473,10 @@ struct KisNodeJugglerCompressed::Private
 };
 
 KisNodeJugglerCompressed::KisNodeJugglerCompressed(const KUndo2MagicString &actionName, KisImageSP image, KisNodeManager *nodeManager, int timeout)
-    : m_d(new Private(image, nodeManager, timeout))
+    : m_d(new Private(actionName, image, nodeManager, timeout))
 {
     connect(m_d->image, SIGNAL(sigStrokeCancellationRequested()), SLOT(slotEndStrokeRequested()));
+    connect(m_d->image, SIGNAL(sigUndoDuringStrokeRequested()), SLOT(slotCancelStrokeRequested()));
     connect(m_d->image, SIGNAL(sigStrokeEndRequestedActiveNodeFiltered()), SLOT(slotEndStrokeRequested()));
 
     KisImageSignalVector emitSignals;
@@ -407,6 +496,11 @@ KisNodeJugglerCompressed::KisNodeJugglerCompressed(const KUndo2MagicString &acti
 
 KisNodeJugglerCompressed::~KisNodeJugglerCompressed()
 {
+}
+
+bool KisNodeJugglerCompressed::canMergeAction(const KUndo2MagicString &actionName)
+{
+    return actionName == m_d->actionName;
 }
 
 KisNodeList KisNodeJugglerCompressed::sortAndFilterNodes(const KisNodeList &nodes)
@@ -436,6 +530,16 @@ void KisNodeJugglerCompressed::raiseNode(const KisNodeList &nodes)
         new LowerRaiseLayer(m_d->updateData, m_d->nodeManager,
                             m_d->image,
                             nodes, m_d->nodeManager->activeNode(), false));
+    startTimers();
+}
+
+void KisNodeJugglerCompressed::removeNode(const KisNodeList &nodes)
+{
+    m_d->applicator->applyCommand(
+        new RemoveLayers(m_d->updateData, m_d->nodeManager,
+                         m_d->image,
+                         nodes, m_d->nodeManager->activeNode()));
+
     startTimers();
 }
 
@@ -471,6 +575,11 @@ void KisNodeJugglerCompressed::end()
         new UpdateMovedNodesCommand(m_d->updateData, true));
 
     m_d->applicator->end();
+    cleanup();
+}
+
+void KisNodeJugglerCompressed::cleanup()
+{
     m_d->applicator.reset();
     m_d->compressor.stop();
     m_d->isStarted = false;
@@ -491,6 +600,14 @@ void KisNodeJugglerCompressed::slotEndStrokeRequested()
 {
     if (!m_d->isStarted) return;
     end();
+}
+
+void KisNodeJugglerCompressed::slotCancelStrokeRequested()
+{
+    if (!m_d->isStarted) return;
+
+    m_d->applicator->cancel();
+    cleanup();
 }
 
 bool KisNodeJugglerCompressed::isEnded() const
