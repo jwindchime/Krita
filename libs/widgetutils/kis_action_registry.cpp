@@ -128,8 +128,7 @@ KisActionRegistry::KisActionRegistry()
     KConfigGroup cg = KSharedConfig::openConfig()->group("Shortcut Schemes");
     QString schemeName = cg.readEntry("Current Scheme", "Default");
     loadShortcutScheme(schemeName);
-
-    d->loadCustomShortcuts();
+    loadCustomShortcuts();
 
     KoResourcePaths::addResourceType("kis_shortcuts", "data", "krita/shortcuts/");
 }
@@ -182,9 +181,13 @@ void KisActionRegistry::notifySettingsUpdated()
     d->loadCustomShortcuts();
 };
 
-void KisActionRegistry::loadCustomShortcuts()
+void KisActionRegistry::loadCustomShortcuts(const QString &path)
 {
-    d->loadCustomShortcuts();
+    if (path.isEmpty()) {
+        d->loadCustomShortcuts();
+    } else {
+        d->loadCustomShortcuts(path);
+    }
 };
 
 void KisActionRegistry::loadShortcutScheme(const QString &schemeName)
@@ -234,7 +237,7 @@ void KisActionRegistry::configureShortcuts()
 
    dlg.configure();  // Show the dialog.
 
-   d->loadCustomShortcuts();
+   loadCustomShortcuts();
 
    emit shortcutsUpdated();
 }
@@ -244,8 +247,10 @@ void KisActionRegistry::applyShortcutScheme(const KConfigBase *config)
 {
     // First, update the things in KisActionRegistry
     if (config == 0) {
-        // Simplest just to reload everything
+        // Use default shortcut scheme. Simplest just to reload everything.
+        d->actionInfoList.clear();
         d->loadActionFiles();
+        loadCustomShortcuts();
     } else {
         const auto schemeEntries = config->group(QStringLiteral("Shortcuts")).entryMap();
         // Load info item for each shortcut, reset custom shortcuts
@@ -456,9 +461,7 @@ void KisActionRegistry::Private::loadActionFiles()
 
 void KisActionRegistry::Private::loadCustomShortcuts(QString filename)
 {
-    Q_UNUSED(filename);
-
-    const KConfigGroup localShortcuts(KSharedConfig::openConfig("kritashortcutsrc"),
+    const KConfigGroup localShortcuts(KSharedConfig::openConfig(filename),
                                       QStringLiteral("Shortcuts"));
 
 
@@ -470,6 +473,8 @@ void KisActionRegistry::Private::loadCustomShortcuts(QString filename)
         if (localShortcuts.hasKey(i.key())) {
             QString entry = localShortcuts.readEntry(i.key(), QString());
             i.value().customShortcut = QKeySequence(entry);
+        } else {
+            i.value().customShortcut = QKeySequence();
         }
     }
 };

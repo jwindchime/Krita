@@ -31,6 +31,7 @@
 #include "KisShortcutsDialog.h"
 #include "KisShortcutsDialog_p.h"
 #include "kshortcutschemeshelper_p.h"
+#include "kshortcutschemeseditor.h"
 
 #include <QApplication>
 #include <QDialogButtonBox>
@@ -156,7 +157,7 @@ void KisShortcutsDialog::allDefault()
 void KisShortcutsDialog::importConfiguration(const QString &path)
 {
     KConfig config(path);
-    d->m_shortcutsEditor->importConfiguration(static_cast<KConfigBase *>(&config));
+    d->m_shortcutsEditor->importConfiguration(static_cast<KConfigBase *>(&config), true);
 }
 
 void KisShortcutsDialog::exportConfiguration(const QString &path) const
@@ -170,6 +171,12 @@ void KisShortcutsDialog::saveCustomShortcuts(const QString &path) const
   KConfig config(path);
   KConfigGroup cg(&config, QStringLiteral("Shortcuts"));
   d->m_shortcutsEditor->saveShortcuts(&cg);
+}
+
+void KisShortcutsDialog::loadCustomShortcuts(const QString &path)
+{
+    KConfig config(path);
+    d->m_shortcutsEditor->importConfiguration(static_cast<KConfigBase *>(&config), false);
 }
 
 #include "moc_KisShortcutsDialog.cpp"

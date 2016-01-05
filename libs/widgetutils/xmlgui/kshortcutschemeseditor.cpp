@@ -16,6 +16,7 @@
     the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
     Boston, MA 02110-1301, USA.
 */
+#include "kshortcutschemeseditor.h"
 #include "KisShortcutsDialog_p.h"
 
 #include <QDir>
@@ -84,6 +85,8 @@ KShortcutSchemesEditor::KShortcutSchemesEditor(KisShortcutsDialog *parent)
 
     moreActionsMenu->addAction(i18n("Save Custom Shortcuts"),
                                this, SLOT(saveCustomShortcuts()));
+    moreActionsMenu->addAction(i18n("Load Custom Shortcuts"),
+                               this, SLOT(loadCustomShortcuts()));
     moreActionsMenu->addAction(i18n("Export Scheme..."),
                                this, SLOT(exportShortcutsScheme()));
     moreActionsMenu->addAction(i18n("Import Scheme..."),
@@ -155,9 +158,16 @@ QString KShortcutSchemesEditor::currentScheme()
 void KShortcutSchemesEditor::exportShortcutsScheme()
 {
     //ask user about dir
-    QString path = QFileDialog::getSaveFileName(m_dialog, i18n("Export Shortcuts"),
-                                                KoResourcePaths::saveLocation("kis_shortcuts"),
-                                                i18n("Shortcuts (*.shortcuts)"));
+    QFileDialog dlg(m_dialog,
+                    i18n("Export Shortcuts"),
+                    KoResourcePaths::saveLocation("kis_shortcuts"),
+                    i18n("Shortcuts (*.shortcuts)"));
+    dlg.setDefaultSuffix(QStringLiteral(".shortcuts"));
+    dlg.setAcceptMode(QFileDialog::AcceptSave);
+    dlg.exec();
+    auto path = dlg.selectedFiles().first();
+
+    // Parent, caption, dir, filter
     if (path.isEmpty()) {
         return;
     }
@@ -167,15 +177,39 @@ void KShortcutSchemesEditor::exportShortcutsScheme()
 
 void KShortcutSchemesEditor::saveCustomShortcuts()
 {
-  //ask user about dir
-  QString path = QFileDialog::getSaveFileName(m_dialog, i18n("Save Shortcuts"),
-                                              QDir::currentPath(),
-                                              i18n("Shortcuts (*.shortcuts)"));
-  if (path.isEmpty()) {
-    return;
-  }
+    //ask user about dir
+    QFileDialog dlg(m_dialog,
+                    i18n("Save Shortcuts"),
+                    QDir::currentPath(),
+                    i18n("Shortcuts (*.shortcuts)"));
+    dlg.setDefaultSuffix(QStringLiteral(".shortcuts"));
+    dlg.setAcceptMode(QFileDialog::AcceptSave);
+    dlg.exec();
+    auto path = dlg.selectedFiles().first();
 
-  m_dialog->saveCustomShortcuts(path);
+    if (path.isEmpty()) {
+        return;
+    }
+
+    m_dialog->saveCustomShortcuts(path);
+}
+
+
+void KShortcutSchemesEditor::loadCustomShortcuts()
+{
+    auto path = QFileDialog::getOpenFileName(m_dialog,
+                                             i18n("Import Shortcuts"),
+                                             QDir::currentPath(),
+                                             i18n("Shortcuts (*.shortcuts)"));
+
+    if (path.isEmpty()) {
+        return;
+    }
+
+    // auto ar = KisActionRegistry::instance();
+    // ar->loadCustomShortcuts(path);
+    m_dialog->loadCustomShortcuts(path);
+
 }
 
 void KShortcutSchemesEditor::importShortcutsScheme()

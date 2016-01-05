@@ -32,17 +32,12 @@ set(TOP_INST_DIR ${INSTALL_ROOT})
 set(EXTPREFIX "${TOP_INST_DIR}")
 set(CMAKE_PREFIX_PATH "${EXTPREFIX}")
 
-if (MSCV)
-    message("WIN64_BUILD" ${WIN64_BUILD})
-endif()
-
-if (WIN64_BUILD  STREQUAL "TRUE")
+if (${CMAKE_GENERATOR} STREQUAL "Visual Studio 14 2015 Win64")
     SET(GLOBAL_PROFILE 
         -DCMAKE_MODULE_LINKER_FLAGS=/machine:x64 
         -DCMAKE_EXE_LINKER_FLAGS=/machine:x64 
         -DCMAKE_SHARED_LINKER_FLAGS=/machine:x64 
         -DCMAKE_STATIC_LINKER_FLAGS=/machine:x64 
-        -DCMAKE_RC_COMPILER = "C:/Program Files (x86)/Windows Kits/8.0/bin/x64/rc.exe"  
     )
 endif ()
 
