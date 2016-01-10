@@ -1,9 +1,5 @@
 add_subdirectory( tests )
 
-########### next target ###############
-
-kde_enable_exceptions()
-
 # Chose a tiles backend
 # 1 - image/tiles
 # 3 - image/tiles3
@@ -34,10 +30,6 @@ set(libkritatile_SRCS
 )
 add_subdirectory( tiles3 )
 endif()
-
-option(HAVE_MEMORY_LEAK_TRACKER "Enable memory leak tracker (always disabled in release build)" OFF)
-option(HAVE_BACKTRACE_SUPPORT "Enable recording of backtrace in memory leak tracker" OFF)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config-memory-leak-tracker.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-memory-leak-tracker.h) ### WRONG PLACE???
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/krita/image/metadata
@@ -201,7 +193,6 @@ set(kritaimage_LIB_SRCS
    kis_curve_circle_mask_generator.cpp
    kis_curve_rect_mask_generator.cpp
    kis_math_toolbox.cpp
-   kis_memory_leak_tracker.cpp
    kis_memory_statistics_server.cpp
    kis_name_server.cpp
    kis_node.cpp
@@ -227,7 +218,6 @@ set(kritaimage_LIB_SRCS
    kis_update_outline_job.cpp
    kis_update_selection_job.cpp
    kis_serializable_configuration.cc
-   kis_shared.cc
    kis_transaction_data.cpp
    kis_transform_worker.cc
    kis_perspectivetransform_worker.cpp
