@@ -35,6 +35,7 @@ class KisViewManager;
 class KisActionManager;
 class KisView;
 class KisNodeSelectionAdapter;
+class KisNodeInsertionAdapter;
 
 /**
  * The node manager passes requests for new layers or masks on to the mask and layer
@@ -101,6 +102,7 @@ public:
     KisNodeList selectedNodes();
 
     KisNodeSelectionAdapter* nodeSelectionAdapter() const;
+    KisNodeInsertionAdapter* nodeInsertionAdapter() const;
 
 public Q_SLOTS:
 
@@ -129,18 +131,25 @@ public Q_SLOTS:
     void slotUiActivatedNode(KisNodeSP node);
 
     /**
-     * Adds a node without searching appropriate position for it.
-     * You *must* ensure that the node is allowed to be added to
-     * the parent, otherwise you'll get an assert.
+     * Adds a list of nodes without searching appropriate position for
+     * it.  You *must* ensure that the nodes are allowed to be added
+     * to the parent, otherwise you'll get an assert.
      */
-    void addNodeDirect(KisNodeSP node, KisNodeSP parent, KisNodeSP aboveThis);
+    void addNodesDirect(KisNodeList nodes, KisNodeSP parent, KisNodeSP aboveThis);
 
     /**
-     * Moves a node without searching appropriate position for it.
-     * You *must* ensure that the node is allowed to be added to
-     * the parent, otherwise you'll get an assert.
+     * Moves a list of nodes without searching appropriate position
+     * for it.  You *must* ensure that the nodes are allowed to be
+     * added to the parent, otherwise you'll get an assert.
      */
-    void moveNodeDirect(KisNodeSP node, KisNodeSP parent, KisNodeSP aboveThis);
+    void moveNodesDirect(KisNodeList nodes, KisNodeSP parent, KisNodeSP aboveThis);
+
+    /**
+     * Copies a list of nodes without searching appropriate position
+     * for it.  You *must* ensure that the nodes are allowed to be
+     * added to the parent, otherwise you'll get an assert.
+     */
+    void copyNodesDirect(KisNodeList nodes, KisNodeSP parent, KisNodeSP aboveThis);
 
 
     void toggleIsolateActiveNode();
@@ -194,6 +203,10 @@ public Q_SLOTS:
     void slotSetSelectedNodes(const KisNodeList &nodes);
 
     void slotImageRequestNodeReselection(KisNodeSP activeNode, const KisNodeList &selectedNodes);
+
+    void cutLayersToClipboard();
+    void copyLayersToClipboard();
+    void pasteLayersFromClipboard();
 
 public:
 
