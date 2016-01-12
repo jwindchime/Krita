@@ -47,7 +47,7 @@ void KisOpenGL::initialize()
 #ifdef HAVE_OPENGL
     dbgUI << "OpenGL: initializing";
 
-    KisConfig cfg;
+//    KisConfig cfg;
 
     QSurfaceFormat format;
     format.setProfile(QSurfaceFormat::CompatibilityProfile);
