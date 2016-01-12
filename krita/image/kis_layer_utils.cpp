@@ -435,28 +435,12 @@ namespace KisLayerUtils {
     }
 
     SwitchFrameCommand::SwitchFrameCommand(KisImageSP image, int time, bool finalize, SharedStorageSP storage)
-        : m_image(image),
+        : FlipFlopCommand(finalize),
+          m_image(image),
           m_newTime(time),
-          m_finalize(finalize),
           m_storage(storage) {}
 
     SwitchFrameCommand::~SwitchFrameCommand() {}
-
-    void SwitchFrameCommand::redo() {
-        if (!m_finalize) {
-            init();
-        } else {
-            end();
-        }
-    }
-
-    void SwitchFrameCommand::undo() {
-        if (m_finalize) {
-            init();
-        } else {
-            end();
-        }
-    }
 
     void SwitchFrameCommand::init() {
         KisImageAnimationInterface *interface = m_image->animationInterface();
@@ -640,6 +624,13 @@ namespace KisLayerUtils {
          * By the end of recursion \p inputNodes must be empty
          */
         KIS_ASSERT_RECOVER_NOOP(root->parent() || inputNodes.isEmpty());
+    }
+
+    KisNodeList sortMergableNodes(KisNodeSP root, KisNodeList nodes)
+    {
+        KisNodeList result;
+        sortMergableNodes(root, nodes, result);
+        return result;
     }
 
     void addCopyOfNameTag(KisNodeSP node)

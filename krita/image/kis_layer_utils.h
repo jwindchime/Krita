@@ -22,6 +22,7 @@
 #include "kundo2command.h"
 #include "kis_types.h"
 #include "kritaimage_export.h"
+#include "kis_command_utils.h"
 
 namespace KisMetaData
 {
@@ -31,6 +32,7 @@ namespace KisMetaData
 namespace KisLayerUtils
 {
     KRITAIMAGE_EXPORT void sortMergableNodes(KisNodeSP root, QList<KisNodeSP> &inputNodes, QList<KisNodeSP> &outputNodes);
+    KRITAIMAGE_EXPORT KisNodeList sortMergableNodes(KisNodeSP root, KisNodeList nodes);
     KRITAIMAGE_EXPORT void filterMergableNodes(QList<KisNodeSP> &nodes, bool allowMasks = false);
 
     KRITAIMAGE_EXPORT void mergeDown(KisImageSP image, KisLayerSP layer, const KisMetaData::MergeStrategy* strategy);
@@ -50,7 +52,7 @@ namespace KisLayerUtils
     void updateFrameJobs(FrameJobs *jobs, KisNodeSP node);
     void updateFrameJobsRecursive(FrameJobs *jobs, KisNodeSP rootNode);
 
-    struct SwitchFrameCommand : public KUndo2Command {
+    struct SwitchFrameCommand : public KisCommandUtils::FlipFlopCommand {
         struct SharedStorage {
             /**
              * For some reason the absence of a destructor in the SharedStorage
@@ -65,8 +67,6 @@ namespace KisLayerUtils
     public:
         SwitchFrameCommand(KisImageSP image, int time, bool finalize, SharedStorageSP storage);
         ~SwitchFrameCommand();
-        void redo();
-        void undo();
 
     private:
         void init();
@@ -75,7 +75,6 @@ namespace KisLayerUtils
     private:
         KisImageWSP m_image;
         int m_newTime;
-        bool m_finalize;
         SharedStorageSP m_storage;
     };
 

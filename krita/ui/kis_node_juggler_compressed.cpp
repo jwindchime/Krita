@@ -451,7 +451,7 @@ struct DuplicateLayers : public KisCommandUtils::AggregateCommand {
         KisNodeSP newParent = newAbove->parent();
 
         // override parent if provided externally
-        if (m_dstAbove) {
+        if (m_dstParent) {
             newAbove = m_dstAbove;
             newParent = m_dstParent;
         }
@@ -575,7 +575,7 @@ struct RemoveLayers : private KisLayerUtils::RemoveNodeHelper, public KisCommand
 
     void populateChildCommands() {
         KisNodeList filteredNodes = m_nodes;
-        KisLayerUtils::filterMergableNodes(filteredNodes);
+        KisLayerUtils::filterMergableNodes(filteredNodes, true);
 
         if (filteredNodes.isEmpty()) return;
 
