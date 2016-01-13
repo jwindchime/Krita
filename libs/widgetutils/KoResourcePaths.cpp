@@ -302,7 +302,7 @@ QString KoResourcePaths::findResourceInternal(const QString &type, const QString
         }
     }
     //Q_ASSERT(!resource.isEmpty());
-    qDebug() << "findResource: type" << type << "filename" << fileName << "resource" << resource;
+    //qDebug() << "findResource: type" << type << "filename" << fileName << "resource" << resource;
     return resource;
 }
 
