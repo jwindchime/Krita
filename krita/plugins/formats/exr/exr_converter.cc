@@ -578,7 +578,7 @@ KisImageBuilder_Result exrConverter::decode(const QUrl &uri)
     // fetch Krita's extra layer info, which might have been stored previously
     QDomDocument extraLayersInfo = m_d->loadExtraLayersInfo(file.header());
 
-    // Constuct the list of LayerInfo
+    // Construct the list of LayerInfo
 
     QList<ExrPaintLayerInfo> informationObjects;
     QList<ExrGroupLayerInfo> groups;

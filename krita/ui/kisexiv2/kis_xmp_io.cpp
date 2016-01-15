@@ -121,10 +121,10 @@ bool KisXMPIO::saveTo(KisMetaData::Store* store, QIODevice* ioDevice, HeaderType
                     ;
                 }
                 xmpData_.add(key, &tv); // set the arrya type
-                const KisMetaData::TypeInfo* stuctureTypeInfo = typeInfo->embeddedPropertyType();
+                const KisMetaData::TypeInfo* structureTypeInfo = typeInfo->embeddedPropertyType();
                 const KisMetaData::Schema* structureSchema = 0;
-                if (stuctureTypeInfo) {
-                    structureSchema = stuctureTypeInfo->structureSchema();
+                if (structureTypeInfo) {
+                    structureSchema = structureTypeInfo->structureSchema();
                 }
                 if (!structureSchema) {
                     dbgFile << "Unknown schema for " << entry.name();
