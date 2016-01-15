@@ -140,6 +140,8 @@ public:
 
     void addViewAndNotifyLoadingCompleted(KisDocument *document);
 
+    QStringList showOpenFileDialog();
+
 Q_SIGNALS:
 
     /**
@@ -257,6 +259,7 @@ private Q_SLOTS:
 
     KisPrintJob* exportToPdf(KoPageLayout pageLayout, QString pdfFileName = QString());
 
+    void importAnimation();
     void exportAnimation();
 
     /**
@@ -365,6 +368,8 @@ protected:
     // QWidget overrides
     virtual void dragEnterEvent(QDragEnterEvent * event);
     virtual void dropEvent(QDropEvent * event);
+    virtual void dragMoveEvent(QDragMoveEvent * event);
+    virtual void dragLeaveEvent(QDragLeaveEvent * event);
 
     void setToolbarList(QList<QAction*> toolbarList);
 
@@ -440,6 +445,7 @@ protected:
 private Q_SLOTS:
     void initializeGeometry();
     void showManual();
+    void switchTab(int index);
 
 private:
     class Private;
