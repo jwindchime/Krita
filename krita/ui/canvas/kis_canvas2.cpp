@@ -794,7 +794,12 @@ QPoint KisCanvas2::documentOffset() const
 
 void KisCanvas2::setFavoriteResourceManager(KisFavoriteResourceManager* favoriteResourceManager)
 {
+    // On OSX, we cannot paint a widget that's "owned" by an opengl widget, so make this the popup owned by the application window.
+#ifdef Q_OS_MAC
+     m_d->popupPalette = new KisPopupPalette(favoriteResourceManager, displayColorConverter()->displayRendererInterface(), qApp->activeWindow());
+#else
     m_d->popupPalette = new KisPopupPalette(favoriteResourceManager, displayColorConverter()->displayRendererInterface(), m_d->canvasWidget->widget());
+#endif
     m_d->popupPalette->showPopupPalette(false);
 }
 
