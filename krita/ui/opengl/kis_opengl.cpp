@@ -27,6 +27,7 @@
 #include <QDir>
 #include <QFile>
 #include <QDesktopServices>
+#include <QMessageBox>
 
 #include <klocalizedstring.h>
 
@@ -39,6 +40,7 @@ namespace
 #endif
     bool NeedsFenceWorkaround = false;
     int glVersion = 0;
+    QString Renderer;
 }
 
 
@@ -63,6 +65,7 @@ void KisOpenGL::initialize()
     }
     format.setSwapInterval(0); // Disable vertical refresh syncing
     QSurfaceFormat::setDefaultFormat(format);
+
 #endif
 }
 
@@ -77,14 +80,18 @@ int KisOpenGL::initializeContext(QOpenGLContext* s) {
 
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
+#ifndef GL_RENDERER
+#  define GL_RENDERER 0x1F01
+#endif
+    Renderer = QString((const char*)f->glGetString(GL_RENDERER));
+
     QFile log(QDesktopServices::storageLocation(QDesktopServices::TempLocation) + "/krita-opengl.txt");
     dbgUI << "Writing OpenGL log to" << log.fileName();
     log.open(QFile::WriteOnly);
     QString vendor((const char*)f->glGetString(GL_VENDOR));
     log.write(vendor.toLatin1());
     log.write(", ");
-    QString renderer((const char*)f->glGetString(GL_RENDERER));
-    log.write(renderer.toLatin1());
+    log.write(Renderer.toLatin1());
     log.write(", ");
     QString version((const char*)f->glGetString(GL_VERSION));
     log.write(version.toLatin1());
@@ -95,7 +102,7 @@ int KisOpenGL::initializeContext(QOpenGLContext* s) {
     isOnX11 = true;
 #endif
 
-    if ((isOnX11 && renderer.startsWith("AMD")) || cfg.forceOpenGLFenceWorkaround()) {
+    if ((isOnX11 && Renderer.startsWith("AMD")) || cfg.forceOpenGLFenceWorkaround()) {
         NeedsFenceWorkaround = true;
     }
 #else
@@ -114,6 +121,11 @@ bool KisOpenGL::supportsFenceSync()
 bool KisOpenGL::needsFenceWorkaround()
 {
     return NeedsFenceWorkaround;
+}
+
+QString KisOpenGL::renderer()
+{
+    return Renderer;
 }
 
 bool KisOpenGL::hasOpenGL()

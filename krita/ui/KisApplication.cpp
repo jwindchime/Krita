@@ -42,6 +42,7 @@
 #include <QStyle>
 #include <QStyleFactory>
 #include <QStandardPaths>
+#include <QMessageBox>
 
 #include <klocalizedstring.h>
 #include <kdesktopfile.h>
@@ -168,6 +169,24 @@ KisApplication::KisApplication(const QString &key, int &argc, char **argv)
 
 #ifdef HAVE_OPENGL
     KisOpenGL::initialize();
+
+    /**
+     * Warn about Intel's broken video drivers
+     */
+#if defined HAVE_OPENGL && defined Q_OS_WIN
+    KisConfig cfg;
+    QString renderer = KisOpenGL::renderer();
+    if (cfg.useOpenGL() && renderer.startsWith("Intel") && !cfg.readEntry("WarnedAboutIntel", false)) {
+        QMessageBox::information(0,
+                                 i18nc("@title:window", "Krita: Warning"),
+                                 i18n("You have an Intel(R) HD Graphics video adapter.\n"
+                                      "If you experience problems like a black or blank screen,"
+                                      "please update your display driver to the latest version.\n\n"
+                                      "You can also disable OpenGL rendering in Krita's Settings.\n"));
+        cfg.writeEntry("WarnedAboutIntel", true);
+    }
+#endif
+
 #endif
 
 }
@@ -209,11 +228,12 @@ void initializeGlobals(const KisApplicationArguments &args)
 }
 
 
-bool checkLocalResourcesTree()
+void checkLocalResourcesTree()
 {
+
 }
 
-bool loadPlugins()
+void loadPlugins()
 {
     KoShapeRegistry* r = KoShapeRegistry::instance();
     r->add(new KisShapeSelectionFactory());
@@ -235,10 +255,11 @@ bool loadPlugins()
     // XXX_EXIV: make the exiv io backends real plugins
     KisExiv2::initialize();
 
+
 }
 
 
-bool loadResources()
+void loadResources()
 {
 
     // for cursors
