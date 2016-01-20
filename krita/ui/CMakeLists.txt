@@ -19,6 +19,10 @@ include_directories(
     ${EXIV2_INCLUDE_DIR}
     ${OCIO_INCLUDE_DIR})
 
+include_directories(
+    ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
+)
+
 add_subdirectory( tests )
 
 if (APPLE)
@@ -341,6 +345,18 @@ set(kritaui_LIB_SRCS
 
     KisPaletteModel.cpp
     KisColorsetChooser.cpp
+
+    opengl/paintengine/qopengl2pexvertexarray.cpp
+    opengl/paintengine/qopenglcustomshaderstage.cpp
+    opengl/paintengine/qopenglengineshadermanager.cpp
+    opengl/paintengine/qopenglgradientcache.cpp
+    opengl/paintengine/qopenglpaintengine.cpp
+    opengl/paintengine/qopengltextureblitter.cpp
+    opengl/paintengine/qopengltexturecache.cpp
+    opengl/paintengine/qopengltextureglyphcache.cpp
+    opengl/paintengine/qopengltexturehelper.cpp
+    opengl/paintengine/qtriangulatingstroker.cpp
+    opengl/paintengine/qtriangulator.cpp
 )
 
 if(WIN32)
