@@ -33,7 +33,7 @@
 
 #include "qopengltextureglyphcache_p.h"
 #include "qopenglpaintengine_p.h"
-#include "private/qopenglengineshadersource_p.h"
+#include "qopenglengineshadersource_p.h"
 #include "qopenglextensions_p.h"
 #include <qrgb.h>
 #include <private/qdrawhelper_p.h>

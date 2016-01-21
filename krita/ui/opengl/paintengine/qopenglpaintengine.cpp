@@ -73,7 +73,7 @@
 #include <private/qfontengine_p.h>
 #include <private/qdatabuffer_p.h>
 #include <private/qstatictext_p.h>
-#include <private/qtriangulator_p.h>
+#include "qtriangulator_p.h"
 
 #include "qopenglengineshadermanager_p.h"
 #include "qopengl2pexvertexarray_p.h"
@@ -1250,6 +1250,7 @@ void QOpenGL2PaintEngineExPrivate::drawVertexArrays(const float *data, int *stop
 QOpenGL2PaintEngineEx::QOpenGL2PaintEngineEx()
     : QPaintEngineEx(*(new QOpenGL2PaintEngineExPrivate(this)))
 {
+    qDebug() <<  "CREATING OUR OWN QOPENGLPAINTENGINE";
 }
 
 QOpenGL2PaintEngineEx::~QOpenGL2PaintEngineEx()

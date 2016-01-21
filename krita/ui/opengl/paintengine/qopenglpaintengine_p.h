@@ -47,11 +47,11 @@
 
 #include <QDebug>
 
-#include <qopenglpaintdevice.h>
+#include "qopenglpaintdevice.h"
 
 #include <private/qpaintengineex_p.h>
-#include <private/qopenglengineshadermanager_p.h>
-#include <private/qopengl2pexvertexarray_p.h>
+#include "qopenglengineshadermanager_p.h"
+#include "qopengl2pexvertexarray_p.h"
 #include <private/qfontengine_p.h>
 #include <private/qdatabuffer_p.h>
 #include <private/qtriangulatingstroker_p.h>

@@ -337,20 +337,17 @@ void KisOpenGLCanvas2::paintGL()
 
     KisOpenglCanvasDebugger::instance()->nofityPaintRequested();
 
-    //QPainter gc(this);
-    //gc.beginNativePainting();
-
     renderCanvasGL();
 
     if (d->glSyncObject) {
         Sync::deleteSync(d->glSyncObject);
     }
     d->glSyncObject = Sync::getSync();
-    //gc.endNativePainting();
 
-    //renderDecorations(&gc);
-    //gc.end();
 
+    QPainter gc(this);
+    renderDecorations(&gc);
+    gc.end();
 
     if (!OPENGL_SUCCESS) {
         KisConfig cfg;
@@ -878,3 +875,4 @@ KisOpenGLImageTexturesSP KisOpenGLCanvas2::openGLImageTextures() const
 }
 
 #endif // HAVE_OPENGL
+

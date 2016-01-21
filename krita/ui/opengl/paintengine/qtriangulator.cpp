@@ -47,7 +47,7 @@
 
 #include <private/qopenglcontext_p.h>
 #include <private/qopenglextensions_p.h>
-#include <private/qrbtree_p.h>
+#include "qrbtree_p.h"
 
 QT_BEGIN_NAMESPACE
 

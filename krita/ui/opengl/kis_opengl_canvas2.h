@@ -24,7 +24,7 @@
 
 #ifdef HAVE_OPENGL
 
-#include <QOpenGLWidget>
+#include "paintengine/qopenglwidget.h"
 #include <QOpenGLFunctions>
 
 #include "canvas/kis_canvas_widget_base.h"

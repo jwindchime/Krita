@@ -21,6 +21,7 @@ include_directories(
 
 include_directories(
     ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
+    ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
 )
 
 add_subdirectory( tests )
@@ -357,6 +358,8 @@ set(kritaui_LIB_SRCS
     opengl/paintengine/qopengltexturehelper.cpp
     opengl/paintengine/qtriangulatingstroker.cpp
     opengl/paintengine/qtriangulator.cpp
+    opengl/paintengine/qopenglwidget.cpp
+    opengl/paintengine/qopenglpaintdevice.cpp
 )
 
 if(WIN32)
