@@ -34,7 +34,7 @@
 #include "qopenglgradientcache_p.h"
 #include <private/qdrawhelper_p.h>
 #include <private/qopenglcontext_p.h>
-#include <private/qrgba64_p.h>
+#include "qrgba64_p.h"
 #include <QtCore/qmutex.h>
 #include "qopenglfunctions.h"
 #include "qopenglextensions_p.h"

@@ -50,7 +50,7 @@
 #include <private/qopenglcontext_p.h>
 #include <QtCore/qmutex.h>
 #include <QGradient>
-#include <qrgba64.h>
+#include "qrgba64.h"
 
 QT_BEGIN_NAMESPACE
 
