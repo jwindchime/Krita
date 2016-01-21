@@ -45,7 +45,7 @@
 // We mean it.
 //
 
-#include <QtGui/qrgba64.h>
+#include "qrgba64.h"
 #include <QtGui/private/qdrawhelper_p.h>
 #include <private/qsimd_p.h>
 

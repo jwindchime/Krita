@@ -36,8 +36,8 @@
 #include <private/qopenglcontext_p.h>
 #include "qrgba64_p.h"
 #include <QtCore/qmutex.h>
-#include "qopenglfunctions.h"
-#include "qopenglextensions_p.h"
+#include <qopenglfunctions.h>
+#include <private/qopenglextensions_p.h>
 
 #ifndef GL_RGBA16
 #define GL_RGBA16   0x805B
@@ -145,17 +145,17 @@ GLuint QOpenGL2GradientCache::addCacheElement(quint64 hash_val, const QGradient 
     CacheInfo cache_entry(gradient.stops(), opacity, gradient.interpolationMode());
     funcs->glGenTextures(1, &cache_entry.texId);
     funcs->glBindTexture(GL_TEXTURE_2D, cache_entry.texId);
-    if (static_cast<QOpenGLExtensions *>(funcs)->hasOpenGLExtension(QOpenGLExtensions::Sized16Formats)) {
-        QRgba64 buffer[1024];
-        generateGradientColorTable(gradient, buffer, paletteSize(), opacity);
-        funcs->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, paletteSize(), 1,
-                            0, GL_RGBA, GL_UNSIGNED_SHORT, buffer);
-    } else {
+//    if (static_cast<QOpenGLExtensions *>(funcs)->hasOpenGLExtension(QOpenGLExtensions::Sized16Formats)) {
+//        QRgba64 buffer[1024];
+//        generateGradientColorTable(gradient, buffer, paletteSize(), opacity);
+//        funcs->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, paletteSize(), 1,
+//                            0, GL_RGBA, GL_UNSIGNED_SHORT, buffer);
+//    } else {
         uint buffer[1024];
         generateGradientColorTable(gradient, buffer, paletteSize(), opacity);
         funcs->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, paletteSize(), 1,
                             0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-    }
+//    }
     return cache.insert(hash_val, cache_entry).value().texId;
 }
 
@@ -168,7 +168,7 @@ void QOpenGL2GradientCache::generateGradientColorTable(const QGradient& gradient
     QVector<QRgba64> colors(s.size());
 
     for (int i = 0; i < s.size(); ++i)
-        colors[i] = s[i].second.rgba64();
+        colors[i] = s[i].second.rgba();
 
     bool colorInterpolation = (gradient.interpolationMode() == QGradient::ColorInterpolation);
 
