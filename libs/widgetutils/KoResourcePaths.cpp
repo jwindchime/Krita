@@ -88,6 +88,7 @@ QString getInstallationPrefix() {
 //         qDebug() << "running from a deployed bundle";
          bundlePath += QString::fromLatin1("/Contents/share/");
 //     //qDebug() << "1" << bundlePath << (bundlePath + QString::fromLatin1("/Contents/MacOS/share"));
+     }
      else if (QFile(bundlePath + QString::fromLatin1("/Contents/MacOS/share")).exists()) {
 //         //qDebug() << "running from a deployed bundle";
          bundlePath += QString::fromLatin1("/Contents/MacOS/");
