@@ -31,6 +31,7 @@
 
 #include <kis_icon.h>
 #include "kis_action.h"
+#include <kis_resource_server_provider.h>
 
 #define ICON_SIZE 48
 
@@ -82,14 +83,14 @@ DlgBundleManager::DlgBundleManager(KisActionManager* actionMgr, QWidget *parent)
 
 void DlgBundleManager::refreshListData()
 {
-    KoResourceServer<ResourceBundle> *bundleServer = ResourceBundleServerProvider::instance()->resourceBundleServer();
+    KoResourceServer<KisResourceBundle> *bundleServer = KisResourceServerProvider::instance()->resourceBundleServer();
 
     m_ui->listInactive->clear();
     m_ui->listActive->clear();
 
 
     Q_FOREACH (const QString &f, bundleServer->blackListedFiles()) {
-        ResourceBundle *bundle = new ResourceBundle(f);
+        KisResourceBundle *bundle = new KisResourceBundle(f);
         bundle->load();
         if (bundle->valid()) {
             bundle->setInstalled(false);
@@ -98,7 +99,7 @@ void DlgBundleManager::refreshListData()
     }
     fillListWidget(m_blacklistedBundles.values(), m_ui->listInactive);
 
-    Q_FOREACH (ResourceBundle *bundle, bundleServer->resources()) {
+    Q_FOREACH (KisResourceBundle *bundle, bundleServer->resources()) {
         if (bundle->valid()) {
             m_activeBundles[bundle->filename()] = bundle;
         }
@@ -108,19 +109,19 @@ void DlgBundleManager::refreshListData()
 
 void DlgBundleManager::accept()
 {
-    KoResourceServer<ResourceBundle> *bundleServer = ResourceBundleServerProvider::instance()->resourceBundleServer();
+    KoResourceServer<KisResourceBundle> *bundleServer = KisResourceServerProvider::instance()->resourceBundleServer();
 
     for (int i = 0; i < m_ui->listActive->count(); ++i) {
         QListWidgetItem *item = m_ui->listActive->item(i);
         QByteArray ba = item->data(Qt::UserRole).toByteArray();
-        ResourceBundle *bundle = bundleServer->resourceByMD5(ba);
+        KisResourceBundle *bundle = bundleServer->resourceByMD5(ba);
         QMessageBox bundleFeedback;
         bundleFeedback.setIcon(QMessageBox::Warning);
         QString feedback = "bundlefeedback";
         
         if (!bundle) {
             // Get it from the blacklisted bundles
-            Q_FOREACH (ResourceBundle *b2, m_blacklistedBundles.values()) {
+            Q_FOREACH (KisResourceBundle *b2, m_blacklistedBundles.values()) {
                 if (b2->md5() == ba) {
                     bundle = b2;
                     break;
@@ -160,7 +161,7 @@ void DlgBundleManager::accept()
     for (int i = 0; i < m_ui->listInactive->count(); ++i) {
         QListWidgetItem *item = m_ui->listInactive->item(i);
         QByteArray ba = item->data(Qt::UserRole).toByteArray();
-        ResourceBundle *bundle = bundleServer->resourceByMD5(ba);
+        KisResourceBundle *bundle = bundleServer->resourceByMD5(ba);
 
         if (bundle && bundle->isInstalled()) {
             bundle->uninstall();
@@ -207,12 +208,12 @@ void DlgBundleManager::itemSelected(QListWidgetItem *current, QListWidgetItem *)
     else {
 
         QByteArray ba = current->data(Qt::UserRole).toByteArray();
-        KoResourceServer<ResourceBundle> *bundleServer = ResourceBundleServerProvider::instance()->resourceBundleServer();
-        ResourceBundle *bundle = bundleServer->resourceByMD5(ba);
+        KoResourceServer<KisResourceBundle> *bundleServer = KisResourceServerProvider::instance()->resourceBundleServer();
+        KisResourceBundle *bundle = bundleServer->resourceByMD5(ba);
 
         if (!bundle) {
             // Get it from the blacklisted bundles
-            Q_FOREACH (ResourceBundle *b2, m_blacklistedBundles.values()) {
+            Q_FOREACH (KisResourceBundle *b2, m_blacklistedBundles.values()) {
                 if (b2->md5() == ba) {
                     bundle = b2;
                     break;
@@ -291,12 +292,12 @@ void DlgBundleManager::editBundle()
     }
 }
 
-void DlgBundleManager::fillListWidget(QList<ResourceBundle *> bundles, QListWidget *w)
+void DlgBundleManager::fillListWidget(QList<KisResourceBundle *> bundles, QListWidget *w)
 {
     w->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
     w->setSelectionMode(QAbstractItemView::MultiSelection);
 
-    Q_FOREACH (ResourceBundle *bundle, bundles) {
+    Q_FOREACH (KisResourceBundle *bundle, bundles) {
         QPixmap pixmap(ICON_SIZE, ICON_SIZE);
         if (!bundle->image().isNull()) {
             QImage scaled = bundle->image().scaled(ICON_SIZE, ICON_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);

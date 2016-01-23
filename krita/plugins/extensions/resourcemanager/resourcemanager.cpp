@@ -48,42 +48,11 @@
 #include "dlg_bundle_manager.h"
 #include "dlg_create_bundle.h"
 
-Q_GLOBAL_STATIC(ResourceBundleServerProvider, s_instance)
-
-ResourceBundleServerProvider::ResourceBundleServerProvider()
-{
-    // user-local
-    KoResourcePaths::addResourceType("kis_resourcebundles", "data", "krita/bundles/");
-    KoResourcePaths::addResourceDir("kis_resourcebundles", QDir::homePath() + QString("/.create/bundles"));
-    m_resourceBundleServer = new KoResourceServerSimpleConstruction<ResourceBundle>("kis_resourcebundles", "*.bundle");
-    if (!QFileInfo(m_resourceBundleServer->saveLocation()).exists()) {
-        QDir().mkpath(m_resourceBundleServer->saveLocation());
-    }
-}
-
-
-ResourceBundleServerProvider *ResourceBundleServerProvider::instance()
-{
-    return s_instance;
-}
-
-ResourceBundleServerProvider::~ResourceBundleServerProvider()
-{
-    delete m_resourceBundleServer;
-}
-
-KoResourceServer<ResourceBundle> *ResourceBundleServerProvider::resourceBundleServer()
-{
-    return m_resourceBundleServer;
-}
-
-
 class ResourceManager::Private {
 
 public:
 
     Private()
-        : loader(0)
     {
         brushServer = KisBrushServer::instance()->brushServer(false);
         paintopServer = KisResourceServerProvider::instance()->paintOpPresetServer(false);
@@ -100,8 +69,6 @@ public:
     KoResourceServer<KoColorSet>* paletteServer;
     KoResourceServer<KisWorkspaceResource>* workspaceServer;
 
-    QThread *loader;
-
 };
 
 K_PLUGIN_FACTORY_WITH_JSON(ResourceManagerFactory, "kritaresourcemanager.json", registerPlugin<ResourceManager>();)
@@ -110,8 +77,6 @@ ResourceManager::ResourceManager(QObject *parent, const QVariantList &)
     : KisViewPlugin(parent)
     , d(new Private())
 {
-    QTimer::singleShot(0, this, SLOT(loadBundles()));
-
     KisAction *action = new KisAction(i18n("Import Resources or Bundles..."), this);
     addAction("import_resources", action);
     connect(action, SIGNAL(triggered()), this, SLOT(slotImport()));
@@ -186,7 +151,7 @@ void ResourceManager::slotImport()
     }
     else if (resourceType == "bundles") {
         Q_FOREACH (const QString &res, resources) {
-            ResourceBundle *bundle = ResourceBundleServerProvider::instance()->resourceBundleServer()->createResource(res);
+            KisResourceBundle *bundle = KisResourceServerProvider::instance()->resourceBundleServer()->createResource(res);
             bundle->load();
             if (bundle->valid()) {
                 if (!bundle->install()) {
@@ -198,17 +163,17 @@ void ResourceManager::slotImport()
             }
 
             QFileInfo fi(res);
-            QString newFilename = ResourceBundleServerProvider::instance()->resourceBundleServer()->saveLocation() + fi.baseName() + bundle->defaultFileExtension();
+            QString newFilename = KisResourceServerProvider::instance()->resourceBundleServer()->saveLocation() + fi.baseName() + bundle->defaultFileExtension();
             QFileInfo fileInfo(newFilename);
 
             int i = 1;
             while (fileInfo.exists()) {
-                fileInfo.setFile(ResourceBundleServerProvider::instance()->resourceBundleServer()->saveLocation() + fi.baseName() + QString("%1").arg(i) + bundle->defaultFileExtension());
+                fileInfo.setFile(KisResourceServerProvider::instance()->resourceBundleServer()->saveLocation() + fi.baseName() + QString("%1").arg(i) + bundle->defaultFileExtension());
                 i++;
             }
             bundle->setFilename(fileInfo.filePath());
             QFile::copy(res, newFilename);
-            ResourceBundleServerProvider::instance()->resourceBundleServer()->addResource(bundle, false);
+            KisResourceServerProvider::instance()->resourceBundleServer()->addResource(bundle, false);
         }
     }
     else if (resourceType == "patterns") {
@@ -240,7 +205,7 @@ void ResourceManager::slotCreateBundle()
     }
 
     QString bundlePath =  dlgCreateBundle.saveLocation() + "/" + dlgCreateBundle.bundleName() + ".bundle";
-    ResourceBundle* newBundle = new ResourceBundle(bundlePath);
+    KisResourceBundle* newBundle = new KisResourceBundle(bundlePath);
 
     newBundle->addMeta("name", dlgCreateBundle.bundleName());
     newBundle->addMeta("author", dlgCreateBundle.authorName());
@@ -308,27 +273,6 @@ void ResourceManager::slotManageBundles()
     }
 
 }
-
-void ResourceManager::loadBundles()
-{
-    d->loader = new KoResourceLoaderThread(ResourceBundleServerProvider::instance()->resourceBundleServer());
-    connect(d->loader, SIGNAL(finished()), this, SLOT(bundlesLoaded()));
-    d->loader->start();
-}
-
-void ResourceManager::bundlesLoaded()
-{
-    delete d->loader;
-    d->loader = 0;
-
-    Q_FOREACH (ResourceBundle *bundle, ResourceBundleServerProvider::instance()->resourceBundleServer()->resources()) {
-        if (!bundle->install()) {
-            warnKrita << "Could not install resources for bundle" << bundle->name();
-        }
-    }
-
-}
-
 
 
 #include "resourcemanager.moc"

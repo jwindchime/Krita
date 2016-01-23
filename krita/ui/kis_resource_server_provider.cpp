@@ -45,6 +45,7 @@
 
 Q_GLOBAL_STATIC(KisResourceServerProvider, s_instance)
 
+
 typedef KoResourceServerSimpleConstruction<KisPaintOpPreset, SharedPointerStoragePolicy<KisPaintOpPresetSP> > KisPaintOpPresetResourceServer;
 typedef KoResourceServerAdapter<KisPaintOpPreset, SharedPointerStoragePolicy<KisPaintOpPresetSP> > KisPaintOpPresetResourceServerAdapter;
 
@@ -55,33 +56,30 @@ inline bool isRunningInKrita() {
 
 
 KisResourceServerProvider::KisResourceServerProvider()
+    : m_resourceBundleServer(0)
 {
     KisBrushServer *brushServer = KisBrushServer::instance();
-
-    KoResourcePaths::addResourceType("kis_paintoppresets", "data", "krita/paintoppresets/");
-    KoResourcePaths::addResourceDir("kis_paintoppresets", QDir::homePath() + QString("/.create/paintoppresets/krita"));
-    KoResourcePaths::addResourceType("kis_workspaces", "data", "krita/workspaces/");
-    KoResourcePaths::addResourceType("psd_layer_style_collections", "data", "krita/asl");
 
     m_paintOpPresetServer = new KisPaintOpPresetResourceServer("kis_paintoppresets", "*.kpp");
     if (!QFileInfo(m_paintOpPresetServer->saveLocation()).exists()) {
         QDir().mkpath(m_paintOpPresetServer->saveLocation());
     }
+
     m_paintOpPresetThread = new KoResourceLoaderThread(m_paintOpPresetServer);
-    m_paintOpPresetThread->start();
-    if (!isRunningInKrita()) {
-        m_paintOpPresetThread->barrier();
-    }
+    m_paintOpPresetThread->loadSynchronously();
+//    if (!isRunningInKrita()) {
+//        m_paintOpPresetThread->barrier();
+//    }
 
     m_workspaceServer = new KoResourceServerSimpleConstruction<KisWorkspaceResource>("kis_workspaces", "*.kws");
     if (!QFileInfo(m_workspaceServer->saveLocation()).exists()) {
         QDir().mkpath(m_workspaceServer->saveLocation());
     }
     m_workspaceThread = new KoResourceLoaderThread(m_workspaceServer);
-    m_workspaceThread->start();
-    if (!isRunningInKrita()) {
-        m_workspaceThread->barrier();
-    }
+    m_workspaceThread->loadSynchronously();
+//    if (!isRunningInKrita()) {
+//        m_workspaceThread->barrier();
+//    }
 
     m_layerStyleCollectionServer = new KoResourceServerSimpleConstruction<KisPSDLayerStyleCollectionResource>("psd_layer_style_collections", "*.asl");
     if (!QFileInfo(m_layerStyleCollectionServer->saveLocation()).exists()) {
@@ -89,11 +87,10 @@ KisResourceServerProvider::KisResourceServerProvider()
     }
 
     m_layerStyleCollectionThread = new KoResourceLoaderThread(m_layerStyleCollectionServer);
-    m_layerStyleCollectionThread->start();
-    if (!isRunningInKrita()) {
-        m_layerStyleCollectionThread->barrier();
-    }
-
+    m_layerStyleCollectionThread->loadSynchronously();
+//    if (!isRunningInKrita()) {
+//        m_layerStyleCollectionThread->barrier();
+//    }
 
     connect(this, SIGNAL(notifyBrushBlacklistCleanup()),
             brushServer, SLOT(slotRemoveBlacklistedResources()));
@@ -114,6 +111,24 @@ KisResourceServerProvider::~KisResourceServerProvider()
 KisResourceServerProvider* KisResourceServerProvider::instance()
 {
     return s_instance;
+}
+
+KoResourceServer<KisResourceBundle> *KisResourceServerProvider::resourceBundleServer()
+{
+
+    if (!m_resourceBundleServer)   {
+        m_resourceBundleServer = new KoResourceServerSimpleConstruction<KisResourceBundle>("kis_resourcebundles", "*.bundle");
+
+        KoResourceLoaderThread bundleLoader(m_resourceBundleServer);
+        bundleLoader.loadSynchronously();
+        Q_FOREACH (KisResourceBundle *bundle, m_resourceBundleServer->resources()) {
+            if (!bundle->install()) {
+                warnKrita << "Could not install resources for bundle" << bundle->name();
+            }
+        }
+    }
+
+    return m_resourceBundleServer;
 }
 
 

@@ -559,7 +559,7 @@ void KisNodeManager::slotSomethingActivatedNodeImpl(KisNodeSP node)
         emit sigNodeActivated(node);
         nodesUpdated();
         if (node) {
-            bool toggled =  m_d->view->actionCollection()->action("view_show_just_the_canvas")->isChecked();
+            bool toggled =  m_d->view->actionCollection()->action("view_show_canvas_only")->isChecked();
             if (toggled) {
                 m_d->view->showFloatingMessage( activeLayer()->name(), QIcon(), 1600, KisFloatingMessage::Medium, Qt::TextSingleLine);
             }
@@ -573,7 +573,7 @@ void KisNodeManager::slotNonUiActivatedNode(KisNodeSP node)
     slotSomethingActivatedNodeImpl(node);
 
     if (node) {
-        bool toggled =  m_d->view->actionCollection()->action("view_show_just_the_canvas")->isChecked();
+        bool toggled =  m_d->view->actionCollection()->action("view_show_canvas_only")->isChecked();
         if (toggled) {
             m_d->view->showFloatingMessage( activeLayer()->name(), QIcon(), 1600, KisFloatingMessage::Medium, Qt::TextSingleLine);
         }
@@ -637,7 +637,7 @@ KisPaintDeviceSP KisNodeManager::activePaintDevice()
 
 void KisNodeManager::nodeProperties(KisNodeSP node)
 {
-    if (node->inherits("KisLayer")) {
+    if (selectedNodes().size() > 1 || node->inherits("KisLayer")) {
         m_d->layerManager.layerProperties();
     } else if (node->inherits("KisMask")) {
         m_d->maskManager.maskProperties();
@@ -1200,32 +1200,15 @@ void KisNodeManager::createQuickClippingGroup()
     juggler->addNode(KisNodeList() << maskLayer, parent, above);
 }
 
-KisNodeList findNodesWithProps(KisNodeSP root, const KoProperties &props, bool excludeRoot)
-{
-    KisNodeList nodes;
-
-    if ((!excludeRoot || root->parent()) && root->check(props)) {
-        nodes << root;
-    }
-
-    KisNodeSP node = root->firstChild();
-    while (node) {
-        nodes += findNodesWithProps(node, props, excludeRoot);
-        node = node->nextSibling();
-    }
-
-    return nodes;
-}
-
 void KisNodeManager::selectLayersImpl(const KoProperties &props, const KoProperties &invertedProps)
 {
     KisImageSP image = m_d->view->image();
-    KisNodeList nodes = findNodesWithProps(image->root(), props, true);
+    KisNodeList nodes = KisLayerUtils::findNodesWithProps(image->root(), props, true);
 
     KisNodeList selectedNodes = this->selectedNodes();
 
     if (KritaUtils::compareListsUnordered(nodes, selectedNodes)) {
-        nodes = findNodesWithProps(image->root(), invertedProps, true);
+        nodes = KisLayerUtils::findNodesWithProps(image->root(), invertedProps, true);
     }
 
     if (!nodes.isEmpty()) {
