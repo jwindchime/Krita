@@ -344,10 +344,11 @@ void KisOpenGLCanvas2::paintGL()
     }
     d->glSyncObject = Sync::getSync();
 
-
+/*
     QPainter gc(this);
     renderDecorations(&gc);
     gc.end();
+*/
 
     if (!OPENGL_SUCCESS) {
         KisConfig cfg;
