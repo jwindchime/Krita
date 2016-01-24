@@ -49,7 +49,6 @@ KoPointerEvent* KisScratchPadEventFilter::createMouseEvent(QEvent *event)
 
 KoPointerEvent* KisScratchPadEventFilter::createTabletEvent(QEvent *event)
 {
-    qDebug() << "Dispatching tablet event to KisScratchPad";
     QTabletEvent *tabletEvent = static_cast<QTabletEvent*>(event);
     const QPointF pos = tabletEvent->hiResGlobalPos();
 
