@@ -35,7 +35,7 @@
 
 #include "data/splash/splash_screen.xpm"
 #include "data/splash/splash_holidays.xpm"
-#include "ui/KisDocument.h"
+#include "KisDocument.h"
 #include "kis_splash_screen.h"
 #include "KisPart.h"
 #include "KisApplicationArguments.h"
@@ -43,11 +43,11 @@
 #if defined Q_OS_WIN
 #include <Windows.h>
 #include <stdlib.h>
-#include <ui/input/wintab/kis_tablet_support_win.h>
+#include <wintab/kis_tablet_support_win.h>
 
 #elif defined HAVE_X11
-    #include <ui/input/wintab/kis_tablet_support_x11.h>
-    #include <ui/input/wintab/kis_xi2_event_filter.h>
+    #include <wintab/kis_tablet_support_x11.h>
+    #include <wintab/kis_xi2_event_filter.h>
 #endif
 
 #if defined HAVE_KCRASH
