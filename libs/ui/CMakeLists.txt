@@ -362,6 +362,20 @@ set(kritaui_LIB_SRCS
 
     KisPaletteModel.cpp
     KisColorsetChooser.cpp
+
+    opengl/paintengine/qopengl2pexvertexarray.cpp
+    opengl/paintengine/qopenglcustomshaderstage.cpp
+    opengl/paintengine/qopenglengineshadermanager.cpp
+    opengl/paintengine/qopenglgradientcache.cpp
+    opengl/paintengine/qopenglpaintengine.cpp
+    opengl/paintengine/qopengltextureblitter.cpp
+    opengl/paintengine/qopengltexturecache.cpp
+    opengl/paintengine/qopengltextureglyphcache.cpp
+    opengl/paintengine/qopengltexturehelper.cpp
+    opengl/paintengine/qtriangulatingstroker.cpp
+    opengl/paintengine/qtriangulator.cpp
+    opengl/paintengine/qopenglwidget.cpp
+    opengl/paintengine/qopenglpaintdevice.cpp
 )
 
 if(WIN32)
