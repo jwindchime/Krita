@@ -10,6 +10,7 @@ set(KRITA_INCLUDES
     ${CMAKE_SOURCE_DIR}/libs/ui/tool
     ${CMAKE_SOURCE_DIR}/libs/ui/flake
     ${CMAKE_SOURCE_DIR}/libs/ui/ora
+    ${CMAKE_SOURCE_DIR}/libs/ui/input
     ${CMAKE_SOURCE_DIR}/libs/widgets
     ${CMAKE_SOURCE_DIR}/libs/widgets/resources
     ${CMAKE_SOURCE_DIR}/libs/widgets/colorwidgets
@@ -110,7 +111,7 @@ install(FILES  krita.appdata.xml DESTINATION ${SHARE_INSTALL_PREFIX}/appdata/ )
 install(DIRECTORY DESTINATION ${DATA_INSTALL_DIR}/krita/shortcuts)
 
 
-if (NOT APPLE AND HAVE_OPENGL AND Qt5Quick_FOUND)
+if (HAVE_OPENGL AND Qt5Quick_FOUND)
    add_subdirectory(sketch)
 #    add_subdirectory(gemini)
 endif ()
