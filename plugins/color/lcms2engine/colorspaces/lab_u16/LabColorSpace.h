@@ -21,10 +21,11 @@
 #define LabU16ColorSpace_H_
 
 #include "LcmsColorSpace.h"
-#include "KoColorSpaceTraits.h"
 #include "KoColorModelStandardIds.h"
 
 #define TYPE_LABA_16 (COLORSPACE_SH(PT_Lab) | CHANNELS_SH(3) | BYTES_SH(2) | EXTRA_SH(1))
+
+struct KoLabF32Traits;
 
 class LabU16ColorSpace : public LcmsColorSpace<KoLabU16Traits>
 {
@@ -55,7 +56,11 @@ public:
 
     virtual void colorToXML(const quint8 *pixel, QDomDocument &doc, QDomElement &colorElt) const;
 
-    virtual void colorFromXML(quint8 *pixel, const QDomElement &elt) const;
+    virtual void colorFromXML(quint8* pixel, const QDomElement& elt) const;
+    virtual void toHSY(QVector <double> channelValues, qreal *hue, qreal *sat, qreal *luma) const;
+    virtual QVector <double> fromHSY(qreal *hue, qreal *sat, qreal *luma) const;
+    virtual void toYUV(QVector <double> channelValues, qreal *y, qreal *u, qreal *v) const;
+    virtual QVector <double> fromYUV(qreal *y, qreal *u, qreal *v) const;
 
 private:
     static const quint32 MAX_CHANNEL_L = 0xff00;

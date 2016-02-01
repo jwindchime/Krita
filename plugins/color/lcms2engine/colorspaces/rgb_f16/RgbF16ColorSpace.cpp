@@ -22,10 +22,12 @@
 #include <QDomElement>
 
 #include <klocalizedstring.h>
-
+#include <KoColorConversions.h>
 #include "compositeops/KoCompositeOps.h"
 
-#include "compositeops/RgbCompositeOps.h"
+#include "compositeops/RgbCompositeOpIn.h"
+#include "compositeops/RgbCompositeOpOut.h"
+#include "compositeops/RgbCompositeOpBumpmap.h"
 
 RgbF16ColorSpace::RgbF16ColorSpace(const QString &name, KoColorProfile *p) :
     LcmsColorSpace<KoRgbF16Traits>(colorSpaceId(), name, TYPE_RGBA_HALF_FLT, cmsSigRgbData, p)
@@ -78,3 +80,31 @@ void RgbF16ColorSpace::colorFromXML(quint8 *pixel, const QDomElement &elt) const
     p->alpha = 1.0;
 }
 
+void RgbF16ColorSpace::toHSY(QVector <double> channelValues, qreal *hue, qreal *sat, qreal *luma) const
+{
+    RGBToHSY(channelValues[0],channelValues[1],channelValues[2], hue, sat, luma, lumaCoefficients()[0], lumaCoefficients()[1], lumaCoefficients()[2]);
+}
+
+QVector <double> RgbF16ColorSpace::fromHSY(qreal *hue, qreal *sat, qreal *luma) const
+{
+    QVector <double> channelValues(4);
+    HSYToRGB(*hue, *sat, *luma, &channelValues[0],&channelValues[1],&channelValues[2], lumaCoefficients()[0], lumaCoefficients()[1], lumaCoefficients()[2]);
+    channelValues[3]=1.0;
+    return channelValues;
+}
+
+void RgbF16ColorSpace::toYUV(QVector <double> channelValues, qreal *y, qreal *u, qreal *v) const
+{
+
+    
+    RGBToYUV(channelValues[0],channelValues[1],channelValues[2], y, u, v, lumaCoefficients()[0], lumaCoefficients()[1], lumaCoefficients()[2]);
+}
+
+QVector <double> RgbF16ColorSpace::fromYUV(qreal *y, qreal *u, qreal *v) const
+{
+    QVector <double> channelValues(4);
+
+    YUVToRGB(*y, *u, *v, &channelValues[0],&channelValues[1],&channelValues[2], lumaCoefficients()[0], lumaCoefficients()[1], lumaCoefficients()[2]);
+    channelValues[3]=1.0;
+    return channelValues;
+}

@@ -21,11 +21,12 @@
 #define KIS_YCBCR_U8_COLORSPACE_H_
 
 #include <LcmsColorSpace.h>
-#include <KoColorSpaceTraits.h>
 
 #include <KoColorModelStandardIds.h>
 
 #define TYPE_YCbCrA_8 (COLORSPACE_SH(PT_YCbCr)|CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1))
+
+struct KoYCbCrU8Traits;
 
 class YCbCrU8ColorSpace : public LcmsColorSpace<KoYCbCrU8Traits>
 {
@@ -54,7 +55,11 @@ public:
 
     virtual void colorToXML(const quint8 *pixel, QDomDocument &doc, QDomElement &colorElt) const;
 
-    virtual void colorFromXML(quint8 *pixel, const QDomElement &elt) const;
+    virtual void colorFromXML(quint8* pixel, const QDomElement& elt) const;
+    virtual void toHSY(QVector <double> channelValues, qreal *hue, qreal *sat, qreal *luma) const;
+    virtual QVector <double> fromHSY(qreal *hue, qreal *sat, qreal *luma) const;
+    virtual void toYUV(QVector <double> channelValues, qreal *y, qreal *u, qreal *v) const;
+    virtual QVector <double> fromYUV(qreal *y, qreal *u, qreal *v) const;
 
 };
 

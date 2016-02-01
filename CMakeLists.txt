@@ -390,6 +390,14 @@ if (APPLE)
 #    find_package(Carbon REQUIRED)
 endif ()
 
+##
+## Test for GNU Scientific Library
+##
+find_package(GSL REQUIRED)
+macro_log_feature(GSL_FOUND "GSL" "GNU Scientific Library" "http://www.gnu.org/software/gsl" FALSE "1.7" "Required by Krita's Transform tool.")
+macro_bool_to_01(GSL_FOUND HAVE_GSL)
+configure_file(config-gsl.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-gsl.h )
+
  ###########################
 ############################
 ## Optional dependencies  ##
@@ -457,14 +465,6 @@ endif()
 
 
 ##
-## Test for GNU Scientific Library
-##
-macro_optional_find_package(GSL)
-macro_log_feature(GSL_FOUND "GSL" "GNU Scientific Library" "http://www.gnu.org/software/gsl" FALSE "1.7" "Required by Krita's Transform tool.")
-macro_bool_to_01(GSL_FOUND HAVE_GSL)
-configure_file(config-gsl.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-gsl.h )
-
-##
 ## Test for eigen3
 ##
 macro_optional_find_package(Eigen3)
@@ -510,13 +510,9 @@ if(HAVE_VC)
     include (VcMacros)
 
     if(Vc_COMPILER_IS_CLANG)
-        set(ADDITIONAL_VC_FLAGS "-Wabi -ffp-contract=fast")
-    else()
-        if (MSVC)
-            set(ADDITIONAL_VC_FLAGS "-fabi-version=0 -ffp-contract=fast")
-        else()
-            set(ADDITIONAL_VC_FLAGS "-Wabi -fabi-version=0 -ffp-contract=fast")
-        endif()
+        set(ADDITIONAL_VC_FLAGS "-Wabi -ffp-contract=fast -fPIC")
+    elseif (NOT MSVC)
+        set(ADDITIONAL_VC_FLAGS "-Wabi -fabi-version=0 -ffp-contract=fast -fPIC")
     endif()
 
     #Handle Vc master
@@ -540,7 +536,7 @@ if(HAVE_VC)
 
         macro(ko_compile_for_all_implementations _objs _src)
         if(PACKAGERS_BUILD)
-            vc_compile_for_all_implementations(${_objs} ${_src} FLAGS ${ADDITIONAL_VC_FLAGS} -fPIC ONLY Scalar SSE2 SSSE3 SSE4_1 AVX AVX2)
+            vc_compile_for_all_implementations(${_objs} ${_src} FLAGS ${ADDITIONAL_VC_FLAGS} ONLY Scalar SSE2 SSSE3 SSE4_1 AVX AVX2)
         else()
             set(${_objs} ${_src})
         endif()
@@ -548,7 +544,7 @@ if(HAVE_VC)
     else()
         macro(ko_compile_for_all_implementations_no_scalar _objs _src)
         if(PACKAGERS_BUILD)
-            vc_compile_for_all_implementations(${_objs} ${_src} FLAGS ${ADDITIONAL_VC_FLAGS} -fPIC ONLY SSE2 SSSE3 SSE4_1 AVX)
+            vc_compile_for_all_implementations(${_objs} ${_src} FLAGS ${ADDITIONAL_VC_FLAGS} ONLY SSE2 SSSE3 SSE4_1 AVX)
         else()
             set(${_objs} ${_src})
         endif()
@@ -556,7 +552,7 @@ if(HAVE_VC)
 
         macro(ko_compile_for_all_implementations _objs _src)
         if(PACKAGERS_BUILD)
-            vc_compile_for_all_implementations(${_objs} ${_src} FLAGS ${ADDITIONAL_VC_FLAGS} -fPIC ONLY Scalar SSE2 SSSE3 SSE4_1 AVX)
+            vc_compile_for_all_implementations(${_objs} ${_src} FLAGS ${ADDITIONAL_VC_FLAGS} ONLY Scalar SSE2 SSSE3 SSE4_1 AVX)
         else()
             set(${_objs} ${_src})
         endif()
@@ -640,75 +636,15 @@ include(MacroCalligraAddTest)
 ####################
 
 # for config.h and <toplevel/foo.h> includes (if any?)
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/interfaces )
-
-
-# For kis_debug.h and kis_assert.h
-set(KRITAGLOBAL_INCLUDES ${CMAKE_SOURCE_DIR}/krita/libglobal)
-
-
-set(KOVERSION_INCLUDES ${CMAKE_SOURCE_DIR}/libs/version
-                       ${CMAKE_BINARY_DIR}/libs/version
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR} 
+                           ${CMAKE_CURRENT_BINARY_DIR} 
+                           ${CMAKE_SOURCE_DIR}/interfaces 
 )
 
-include_directories(${KOVERSION_INCLUDES})
-
-# koplugin is at the bottom of the stack
-set(KOPLUGIN_INCLUDES ${CMAKE_SOURCE_DIR}/libs/koplugin)
-
-set(KUNDO2_INCLUDES ${CMAKE_SOURCE_DIR}/libs/kundo2
-                    ${CMAKE_BINARY_DIR}/libs/kundo2
-                    ${CMAKE_SOURCE_DIR}/libs/widgetutils
-                    ${CMAKE_SOURCE_DIR}/libs/widgetutils/config
-                    ${CMAKE_SOURCE_DIR}/libs/widgetutils/xmlgui
+include_directories(
+   ${CMAKE_SOURCE_DIR}/libs/version
+   ${CMAKE_BINARY_DIR}/libs/version
 )
-
-# koodf is at the bottom of the stack
-set(KOODF_INCLUDES ${CMAKE_SOURCE_DIR}/libs/odf
-                   ${CMAKE_SOURCE_DIR}/libs/store
-                   ${CMAKE_BINARY_DIR}/libs/odf
-                   ${CMAKE_BINARY_DIR}/libs/store
-                   ${KOVERSION_INCLUDES}
-                   )
-
-# pigment depends on koplugin and lcms
-set(PIGMENT_INCLUDES ${KOPLUGIN_INCLUDES}
-                   ${KOVERSION_INCLUDES}
-                   ${CMAKE_SOURCE_DIR}/libs/pigment
-                   ${CMAKE_BINARY_DIR}/libs/pigment
-                   ${CMAKE_SOURCE_DIR}/libs/pigment/compositeops
-                   ${Boost_INCLUDE_DIRS}
-                   )
-
-# flake depends on koodf and pigment
-set(FLAKE_INCLUDES ${CMAKE_SOURCE_DIR}/libs/flake
-                   ${KOODF_INCLUDES}
-                   ${PIGMENT_INCLUDES}
-                   ${KUNDO2_INCLUDES}
-                   ${CMAKE_SOURCE_DIR}/libs/flake/commands
-                   ${CMAKE_SOURCE_DIR}/libs/flake/tools
-                   ${CMAKE_SOURCE_DIR}/libs/flake/svg
-                   ${CMAKE_BINARY_DIR}/libs/flake)
-
-# vectorimage
-set(VECTORIMAGE_INCLUDES
-                   ${CMAKE_SOURCE_DIR}/libs/vectorimage
-                   ${CMAKE_SOURCE_DIR}/libs/vectorimage/libemf
-                   ${CMAKE_SOURCE_DIR}/libs/vectorimage/libsvm
-                   ${CMAKE_SOURCE_DIR}/libs/vectorimage/libwmf)
-
-# Widgets depends on kritatext and flake
-set(KOWIDGETS_INCLUDES ${FLAKE_INCLUDES}
-                   ${CMAKE_SOURCE_DIR}/libs/widgetutils
-                   ${CMAKE_BINARY_DIR}/libs/widgetutils
-                   ${CMAKE_SOURCE_DIR}/libs/widgets
-                   ${CMAKE_BINARY_DIR}/libs/widgets)
-
-# BasicFlakes depends on flake, widgets
-set(BASICFLAKES_INCLUDES ${KOWIDGETS_INCLUDES}
-                   ${CMAKE_SOURCE_DIR}/libs/basicflakes
-                   ${CMAKE_BINARY_DIR}/libs/basicflakes
-                   ${CMAKE_SOURCE_DIR}/libs/basicflakes/tools)
 
  ###################################################
 ####################################################

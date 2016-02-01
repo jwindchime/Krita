@@ -19,11 +19,12 @@
 #define COLORSPACE_GRAYSCALE_F32_H_
 
 #include <klocalizedstring.h>
-#include <KoColorSpaceTraits.h>
 #include <KoColorModelStandardIds.h>
 #include "LcmsColorSpace.h"
 
 #define TYPE_GRAYA_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_GRAY)|EXTRA_SH(1)|CHANNELS_SH(1)|BYTES_SH(4))
+
+struct KoGrayF32Traits;
 
 class GrayF32ColorSpace : public LcmsColorSpace<KoGrayF32Traits>
 {
@@ -49,7 +50,12 @@ public:
 
     virtual void colorToXML(const quint8 *pixel, QDomDocument &doc, QDomElement &colorElt) const;
 
-    virtual void colorFromXML(quint8 *pixel, const QDomElement &elt) const;
+    virtual void colorFromXML(quint8* pixel, const QDomElement& elt) const;
+    
+    virtual void toHSY(QVector <double> channelValues, qreal *hue, qreal *sat, qreal *luma) const;
+    virtual QVector <double> fromHSY(qreal *hue, qreal *sat, qreal *luma) const;
+    virtual void toYUV(QVector <double> channelValues, qreal *y, qreal *u, qreal *v) const;
+    virtual QVector <double> fromYUV(qreal *y, qreal *u, qreal *v) const;
 
     static QString colorSpaceId()
     {

@@ -7,10 +7,6 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 endif ()
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/libs/pigment/colorprofiles
-    ${CMAKE_SOURCE_DIR}/libs/widgetutils/xmlgui
-    ${CMAKE_SOURCE_DIR}/libs/widgetutils/config
-    ${CMAKE_SOURCE_DIR}/libs/flake/commands
     ${CMAKE_CURRENT_SOURCE_DIR}/flake
     ${CMAKE_CURRENT_SOURCE_DIR}/ora
     ${CMAKE_CURRENT_SOURCE_DIR}/qtsingleapplication
@@ -36,6 +32,7 @@ include_directories(
     ${EXIV2_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${OCIO_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIRS}
 )
 
 include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
@@ -87,6 +84,7 @@ set(kritaui_LIB_SRCS
     dialogs/kis_dlg_layer_style.cpp
     dialogs/kis_dlg_png_import.cpp
     dialogs/kis_dlg_import_image_sequence.cpp
+    dialogs/kis_delayed_save_dialog.cpp
     flake/kis_node_dummies_graph.cpp
     flake/kis_dummies_facade_base.cpp
     flake/kis_dummies_facade.cpp
@@ -159,6 +157,7 @@ set(kritaui_LIB_SRCS
     kis_canvas_controls_manager.cpp
     kis_tooltip_manager.cpp
     kis_multinode_property.cpp
+    kis_async_action_feedback.cpp
     kisexiv2/kis_exif_io.cpp
     kisexiv2/kis_exiv2.cpp
     kisexiv2/kis_iptc_io.cpp
@@ -221,6 +220,7 @@ set(kritaui_LIB_SRCS
     widgets/kis_color_space_selector.cc
     widgets/kis_advanced_color_space_selector.cc
     widgets/kis_cie_tongue_widget.cpp
+    widgets/kis_tone_curve_widget.cpp
     widgets/kis_curve_widget.cpp
     widgets/kis_custom_image_widget.cc
     widgets/kis_image_from_clipboard_widget.cpp
@@ -474,6 +474,7 @@ ki18n_wrap_ui(kritaui_LIB_SRCS
     forms/wdgimportimagesequence.ui
     forms/KisDetailsPaneBase.ui
     forms/KisOpenPaneBase.ui
+    dialogs/kis_delayed_save_dialog.ui
     input/config/kis_input_configuration_page.ui
     input/config/kis_edit_profiles_dialog.ui
     input/config/kis_input_configuration_page_item.ui
@@ -540,6 +541,16 @@ if(X11_FOUND)
 endif()
 
 target_link_libraries(kritaui LINK_INTERFACE_LIBRARIES kritaimage kritalibbrush kritapigment KF5::Completion KF5::I18n ${GL_INTERFACE_LIBRARIES})
+
+target_include_directories(kritaui
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/canvas>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/flake>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ora>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tool>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/widgets>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/input/wintab>
+)
 
 set_target_properties(kritaui
     PROPERTIES VERSION ${GENERIC_CALLIGRA_LIB_VERSION} SOVERSION ${GENERIC_CALLIGRA_LIB_SOVERSION}

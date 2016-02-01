@@ -50,7 +50,7 @@ public:
  
     //this expects a qvector <double> (9), qvector <double> (3) and whether or not there's profile data?;
     void setProfileData(QVector <double> p, QVector <double> w, bool profileData = false);
-    
+    void setGamut(QPolygonF gamut);
     void setRGBData(QVector <double> whitepoint, QVector <double> colorants);
     void setCMYKData(QVector <double> whitepoint);
     void setXYZData(QVector <double> whitepoint);
@@ -84,6 +84,7 @@ protected:
 private:
  
     void drawColorantTriangle();
+    void drawGamut();
     void drawWhitePoint();
     void drawPatches();
     void updatePixmap();

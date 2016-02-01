@@ -21,9 +21,10 @@
 #define KIS_COLORSPACE_CMYK_F32_H_
 
 #include <LcmsColorSpace.h>
-#include <KoColorSpaceTraits.h>
 
 #include "KoColorModelStandardIds.h"
+
+struct KoCmykF32Traits;
 
 #define TYPE_CMYKA_FLT        (FLOAT_SH(1)|COLORSPACE_SH(PT_CMYK)|EXTRA_SH(1)|CHANNELS_SH(4)|BYTES_SH(4))
 
@@ -48,7 +49,12 @@ public:
 
     virtual void colorToXML(const quint8 *pixel, QDomDocument &doc, QDomElement &colorElt) const;
 
-    virtual void colorFromXML(quint8 *pixel, const QDomElement &elt) const;
+    virtual void colorFromXML(quint8* pixel, const QDomElement& elt) const;
+    
+    virtual void toHSY(QVector <double> channelValues, qreal *hue, qreal *sat, qreal *luma) const;
+    virtual QVector <double> fromHSY( qreal *hue, qreal *sat, qreal *luma) const;
+    virtual void toYUV(QVector <double> channelValues, qreal *y, qreal *u, qreal *v) const;
+    virtual QVector <double> fromYUV(qreal *y, qreal *u, qreal *v) const;
 
     static QString colorSpaceId()
     {

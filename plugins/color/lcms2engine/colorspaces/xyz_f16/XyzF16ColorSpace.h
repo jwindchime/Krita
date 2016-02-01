@@ -21,11 +21,12 @@
 #define KIS_XYZ_F16_COLORSPACE_H_
 
 #include <LcmsColorSpace.h>
-#include <KoColorSpaceTraits.h>
 
 #define TYPE_XYZA_HALF_FLT (FLOAT_SH(1)|COLORSPACE_SH(PT_XYZ)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(2))
 
 #include <KoColorModelStandardIds.h>
+
+struct KoXyzF16Traits;
 
 class XyzF16ColorSpace : public LcmsColorSpace<KoXyzF16Traits>
 {
@@ -49,7 +50,11 @@ public:
 
     virtual void colorToXML(const quint8 *pixel, QDomDocument &doc, QDomElement &colorElt) const;
 
-    virtual void colorFromXML(quint8 *pixel, const QDomElement &elt) const;
+    virtual void colorFromXML(quint8* pixel, const QDomElement& elt) const;
+    virtual void toHSY(QVector <double> channelValues, qreal *hue, qreal *sat, qreal *luma) const;
+    virtual QVector <double> fromHSY(qreal *hue, qreal *sat, qreal *luma) const;
+    virtual void toYUV(QVector <double> channelValues, qreal *y, qreal *u, qreal *v) const;
+    virtual QVector <double> fromYUV(qreal *y, qreal *u, qreal *v) const;
 
     static QString colorSpaceId()
     {

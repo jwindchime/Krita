@@ -5,7 +5,11 @@ if(NOT WIN32)
     add_subdirectory(tests)
 endif()
 
-include_directories( ${PIGMENT_INCLUDES} ${LCMS2_INCLUDE_DIR} )
+include_directories( 
+    ${LCMS2_INCLUDE_DIR} 
+    ${Boost_INCLUDE_DIRS} 
+    
+)
 
 include_directories( 
     ${CMAKE_CURRENT_SOURCE_DIR}/colorspaces/cmyk_u8
@@ -91,6 +95,6 @@ endif ()
 
 add_library(kritalcmsengine MODULE ${lcmsengine_SRCS})
 
-target_link_libraries(kritalcmsengine kritapigment kritawidgets KF5::I18n  ${LCMS2_LIBRARIES}  ${LINK_OPENEXR_LIB})
+target_link_libraries(kritalcmsengine kritapigment kritawidgetutils KF5::I18n KF5::CoreAddons ${LCMS2_LIBRARIES}  ${LINK_OPENEXR_LIB})
 install(TARGETS kritalcmsengine DESTINATION ${CALLIGRA_PLUGIN_INSTALL_DIR})
 
