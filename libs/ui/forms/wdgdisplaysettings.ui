@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>446</width>
-    <height>563</height>
+    <width>539</width>
+    <height>621</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -181,7 +181,7 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout">
-      <item row="0" column="0">
+      <item row="1" column="0">
        <widget class="QLabel" name="label">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -194,7 +194,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="5" column="1">
        <widget class="QCheckBox" name="chkDisableDoubleBuffering">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -213,7 +213,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="1" column="1">
        <widget class="QComboBox" name="cmbFilterMode">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -246,7 +246,7 @@
         </item>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="3" column="1">
        <widget class="QCheckBox" name="chkDisableVsync">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Try to disable vsync for Krita. This makes painting more responsive. Uncheck only when experiencing crashes with some GPU/driver combinations.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -259,7 +259,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="2" column="1">
        <widget class="QCheckBox" name="chkUseTextureBuffer">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -273,6 +273,27 @@
         <property name="text">
          <string>Use texture buffer</string>
         </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>OpenGL Version:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="cmbOpenGLVersion">
+        <item>
+         <property name="text">
+          <string>OpenGL V2.1 (Incompatible with High Qualitiy Scaling)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>OpenGL v3.2</string>
+         </property>
+        </item>
        </widget>
       </item>
      </layout>

@@ -610,6 +610,16 @@ void KisConfig::setOpenGLFilteringMode(int filteringMode)
     m_cfg.writeEntry("OpenGLFilterMode", filteringMode);
 }
 
+int KisConfig::openGLVersion(bool defaultValue) const
+{
+    return (defaultValue ? 1 : m_cfg.readEntry("OpenGLVersion", 1));
+}
+
+void KisConfig::setOpenGLVersion(int openGLVersion)
+{
+    m_cfg.writeEntry("OpenGLVersion", openGLVersion);
+}
+
 bool KisConfig::useOpenGLTextureBuffer(bool defaultValue) const
 {
     return (defaultValue ? true : m_cfg.readEntry("useOpenGLTextureBuffer", true));

@@ -147,11 +147,18 @@ public:
     qint32 monitorRenderIntent(bool defaultValue = false) const;
     void setRenderIntent(qint32 monitorRenderIntent) const;
 
+//
+// OpenGL Options
+//
+
     bool useOpenGL(bool defaultValue = false) const;
     void setUseOpenGL(bool useOpenGL) const;
 
     int openGLFilteringMode(bool defaultValue = false) const;
     void setOpenGLFilteringMode(int filteringMode);
+
+    int openGLVersion(bool defaultValue = false) const;
+    void setOpenGLVersion(int openGLVersion);
 
     bool useOpenGLTextureBuffer(bool defaultValue = false) const;
     void setUseOpenGLTextureBuffer(bool useBuffer);
@@ -169,6 +176,10 @@ public:
     int numMipmapLevels(bool defaultValue = false) const;
     int openGLTextureSize(bool defaultValue = false) const;
     int textureOverlapBorder() const;
+
+//
+//
+//
 
     qint32 maxNumberOfThreads(bool defaultValue = false) const;
     void setMaxNumberOfThreads(qint32 numberOfThreads);
