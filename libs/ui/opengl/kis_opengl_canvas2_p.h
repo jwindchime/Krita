@@ -61,10 +61,10 @@ namespace VSyncWorkaround {
 
         bool triedDisable = false;
         Display *dpy = QX11Info::display();
-        dbgUI << "OpenGL architecture is" << gl_library_name();
+        dbgOpenGL << "OpenGL architecture is" << gl_library_name();
 
         if (ctx->hasExtension("GLX_EXT_swap_control")) {
-            dbgUI << "Swap control extension found.";
+            dbgOpenGL << "Swap control extension found.";
             typedef WId (*k_glXGetCurrentDrawable)(void);
             typedef void (*kis_glXSwapIntervalEXT)(Display*, WId, int);
             k_glXGetCurrentDrawable kis_glXGetCurrentDrawable = (k_glXGetCurrentDrawable)ctx->getProcAddress("glXGetCurrentDrawable");
@@ -85,10 +85,10 @@ namespace VSyncWorkaround {
 
                 result = !swap;
             } else {
-                dbgUI << "Couldn't load glXSwapIntervalEXT extension function";
+                dbgOpenGL << "Couldn't load glXSwapIntervalEXT extension function";
             }
         } else if (ctx->hasExtension("GLX_MESA_swap_control")) {
-            dbgUI << "MESA swap control extension found.";
+            dbgOpenGL << "MESA swap control extension found.";
             typedef int (*kis_glXSwapIntervalMESA)(unsigned int);
             typedef int (*kis_glXGetSwapIntervalMESA)(void);
 
@@ -104,15 +104,15 @@ namespace VSyncWorkaround {
                 if (glXGetSwapIntervalMESA) {
                     swap = glXGetSwapIntervalMESA();
                 } else {
-                    dbgUI << "Couldn't load glXGetSwapIntervalMESA extension function";
+                    dbgOpenGL << "Couldn't load glXGetSwapIntervalMESA extension function";
                 }
 
                 result = !retval && !swap;
             } else {
-                dbgUI << "Couldn't load glXSwapIntervalMESA extension function";
+                dbgOpenGL << "Couldn't load glXSwapIntervalMESA extension function";
             }
         } else {
-            dbgUI << "There is neither GLX_EXT_swap_control or GLX_MESA_swap_control extension supported";
+            dbgOpenGL << "There is neither GLX_EXT_swap_control or GLX_MESA_swap_control extension supported";
         }
 
         if (triedDisable && !result) {
@@ -139,12 +139,12 @@ namespace VSyncWorkaround {
             int interval = ((wglGetSwapIntervalEXT)ctx->getProcAddress("wglGetSwapIntervalEXT"))();
 
             if (interval) {
-                warnUI << "Failed to disable VSync with WGL_EXT_swap_control";
+                warnOpenGL << "Failed to disable VSync with WGL_EXT_swap_control";
             }
 
             retval = !interval;
         } else {
-            warnUI << "WGL_EXT_swap_control extension is not available. Found extensions" << ctx->extensions();
+            warnOpenGL << "WGL_EXT_swap_control extension is not available. Found extensions" << ctx->extensions();
         }
         return retval;
     }
@@ -213,7 +213,7 @@ namespace Sync {
             k_glClientWaitSync = (kis_glClientWaitSync)ctx->getProcAddress("glClientWaitSync");
         }
 #elif defined Q_OS_MAC
-        dbgUI << "check fence sync support" << KisOpenGL::supportsFenceSync();
+        dbgOpenGL << "check fence sync support" << KisOpenGL::supportsFenceSync();
         if (KisOpenGL::supportsFenceSync()) {
             k_glFenceSync  = (kis_glFenceSync)ctx->getProcAddress("glFenceSync");
             k_glGetSynciv  = (kis_glGetSynciv)ctx->getProcAddress("glGetSynciv");
@@ -223,7 +223,7 @@ namespace Sync {
 #endif
         if (k_glFenceSync  == 0 || k_glGetSynciv      == 0 ||
             k_glDeleteSync == 0 || k_glClientWaitSync == 0) {
-            warnUI << "Could not find sync functions, disabling sync notification.";
+            warnOpenGL << "Could not find sync functions, disabling sync notification.";
         }
     }
 

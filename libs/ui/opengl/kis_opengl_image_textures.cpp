@@ -110,7 +110,7 @@ KisOpenGLImageTextures::~KisOpenGLImageTextures()
     if (it != imageTexturesMap.end()) {
         KisOpenGLImageTextures *textures = it.value();
         if (textures == this) {
-            dbgUI << "Removing shared image context from map";
+            dbgOpenGL << "Removing shared image context from map";
             imageTexturesMap.erase(it);
         }
     }
@@ -154,7 +154,7 @@ KisOpenGLImageTexturesSP KisOpenGLImageTextures::getImageTextures(KisImageWSP im
         } else {
             KisOpenGLImageTextures *imageTextures = new KisOpenGLImageTextures(image, monitorProfile, renderingIntent, conversionFlags);
             imageTexturesMap[image] = imageTextures;
-            dbgUI << "Added shareable textures to map";
+            dbgOpenGL << "Added shareable textures to map";
 
             return imageTextures;
         }
@@ -197,7 +197,7 @@ void KisOpenGLImageTextures::createImageTextureTiles()
         QOpenGLFunctions *f = ctx->functions();
 
         m_initialized = true;
-        dbgUI  << "OpenGL: creating texture tiles of size" << m_texturesInfo.height << "x" << m_texturesInfo.width;
+        dbgOpenGL  << "OpenGL: creating texture tiles of size" << m_texturesInfo.height << "x" << m_texturesInfo.width;
 
         m_textureTiles.reserve((lastRow+1)*m_numCols);
         for (int row = 0; row <= lastRow; row++) {
@@ -216,7 +216,7 @@ void KisOpenGLImageTextures::createImageTextureTiles()
         }
     }
     else {
-        dbgUI << "Tried to init texture tiles without a current OpenGL Context.";
+        dbgOpenGL << "Tried to init texture tiles without a current OpenGL Context.";
     }
 }
 
@@ -325,7 +325,7 @@ KisOpenGLUpdateInfoSP KisOpenGLImageTextures::updateCacheImpl(const QRect& rect,
                 info->tileList.append(tileInfo);
             }
             else {
-                dbgUI << "Trying to create an empty tileinfo record" << col << row << tileTextureRect << updateRect << m_image->bounds();
+                dbgOpenGL << "Trying to create an empty tileinfo record" << col << row << tileTextureRect << updateRect << m_image->bounds();
             }
         }
     }
@@ -337,7 +337,7 @@ KisOpenGLUpdateInfoSP KisOpenGLImageTextures::updateCacheImpl(const QRect& rect,
 void KisOpenGLImageTextures::recalculateCache(KisUpdateInfoSP info)
 {
     if (!m_initialized) {
-        dbgUI << "OpenGL: Tried to edit image texture cache before it was initialized.";
+        dbgOpenGL << "OpenGL: Tried to edit image texture cache before it was initialized.";
         return;
     }
 
@@ -359,7 +359,7 @@ void KisOpenGLImageTextures::generateCheckerTexture(const QImage &checkImage)
     QOpenGLContext *ctx = QOpenGLContext::currentContext();
     if (ctx) {
         QOpenGLFunctions *f = ctx->functions();
-        dbgUI << "Attaching checker texture" << checkerTexture();
+        dbgOpenGL << "Attaching checker texture" << checkerTexture();
         f->glBindTexture(GL_TEXTURE_2D, checkerTexture());
 
         f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -377,7 +377,7 @@ void KisOpenGLImageTextures::generateCheckerTexture(const QImage &checkImage)
                     0, GL_BGRA, GL_UNSIGNED_BYTE, img.constBits());
     }
     else {
-        dbgUI << "OpenGL: Tried to generate checker texture before OpenGL was initialized.";
+        dbgOpenGL << "OpenGL: Tried to generate checker texture before OpenGL was initialized.";
     }
 
 }
@@ -391,7 +391,7 @@ GLuint KisOpenGLImageTextures::checkerTexture()
         return m_checkerTexture;
     }
     else {
-        dbgUI << "Tried to access checker texture before OpenGL was initialized";
+        dbgOpenGL << "Tried to access checker texture before OpenGL was initialized";
         return 0;
     }
 }
@@ -413,7 +413,7 @@ void KisOpenGLImageTextures::slotImageSizeChanged(qint32 /*w*/, qint32 /*h*/)
 
 void KisOpenGLImageTextures::setMonitorProfile(const KoColorProfile *monitorProfile, KoColorConversionTransformation::Intent renderingIntent, KoColorConversionTransformation::ConversionFlags conversionFlags)
 {
-    //dbgUI << "Setting monitor profile to" << monitorProfile->name() << renderingIntent << conversionFlags;
+    //dbgOpenGL << "Setting monitor profile to" << monitorProfile->name() << renderingIntent << conversionFlags;
     m_monitorProfile = monitorProfile;
     m_renderingIntent = renderingIntent;
     m_conversionFlags = conversionFlags;
@@ -453,7 +453,7 @@ void KisOpenGLImageTextures::getTextureSize(KisGLTexturesInfo *texturesInfo)
         m_glFuncs->glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
     }
     else {
-        dbgUI << "OpenGL: Tried to read texture size before OpenGL was initialized.";
+        dbgOpenGL << "OpenGL: Tried to read texture size before OpenGL was initialized.";
         maxTextureSize = GL_MAX_TEXTURE_SIZE;
     }
 
@@ -502,18 +502,18 @@ void KisOpenGLImageTextures::updateTextureFormat()
     KoID destinationColorModelId = RGBAColorModelID;
     KoID destinationColorDepthId = Integer8BitsColorDepthID;
 
-    dbgUI << "Choosing texture format:";
+    dbgOpenGL << "Choosing texture format:";
 
     if (colorModelId == RGBAColorModelID) {
         if (colorDepthId == Float16BitsColorDepthID) {
 
             if (ctx->hasExtension("GL_ARB_texture_float")) {
                 m_texturesInfo.internalFormat = GL_RGBA16F_ARB;
-                dbgUI << "Using ARB half";
+                dbgOpenGL << "Using ARB half";
             }
             else if (ctx->hasExtension("GL_ATI_texture_float")) {
                 m_texturesInfo.internalFormat = GL_RGBA_FLOAT16_ATI;
-                dbgUI << "Using ATI half";
+                dbgOpenGL << "Using ATI half";
             }
 
             bool haveBuiltInOpenExr = false;
@@ -524,21 +524,21 @@ void KisOpenGLImageTextures::updateTextureFormat()
             if (haveBuiltInOpenExr && ctx->hasExtension("GL_ARB_half_float_pixel")) {
                 m_texturesInfo.type = GL_HALF_FLOAT_ARB;
                 destinationColorDepthId = Float16BitsColorDepthID;
-                dbgUI << "Pixel type half";
+                dbgOpenGL << "Pixel type half";
             } else {
                 m_texturesInfo.type = GL_FLOAT;
                 destinationColorDepthId = Float32BitsColorDepthID;
-                dbgUI << "Pixel type float";
+                dbgOpenGL << "Pixel type float";
             }
             m_texturesInfo.format = GL_RGBA;
         }
         else if (colorDepthId == Float32BitsColorDepthID) {
             if (ctx->hasExtension("GL_ARB_texture_float")) {
                 m_texturesInfo.internalFormat = GL_RGBA32F_ARB;
-                dbgUI << "Using ARB float";
+                dbgOpenGL << "Using ARB float";
             } else if (ctx->hasExtension("GL_ATI_texture_float")) {
                 m_texturesInfo.internalFormat = GL_RGBA_FLOAT32_ATI;
-                dbgUI << "Using ATI float";
+                dbgOpenGL << "Using ATI float";
             }
 
             m_texturesInfo.type = GL_FLOAT;
@@ -550,7 +550,7 @@ void KisOpenGLImageTextures::updateTextureFormat()
             m_texturesInfo.type = GL_UNSIGNED_SHORT;
             m_texturesInfo.format = GL_BGRA;
             destinationColorDepthId = Integer16BitsColorDepthID;
-            dbgUI << "Using 16 bits rgba";
+            dbgOpenGL << "Using 16 bits rgba";
         }
     }
     else {
@@ -560,7 +560,7 @@ void KisOpenGLImageTextures::updateTextureFormat()
             m_texturesInfo.type = GL_UNSIGNED_SHORT;
             m_texturesInfo.format = GL_BGRA;
             destinationColorDepthId = Integer16BitsColorDepthID;
-            dbgUI << "Using conversion to 16 bits rgba";
+            dbgOpenGL << "Using conversion to 16 bits rgba";
         }
     }
 
@@ -579,11 +579,11 @@ void KisOpenGLImageTextures::updateTextureFormat()
                                        "OpenColorIO will now be deactivated."));
         }
 
-        warnUI << "WARNING: Internal color management was forcely enabled";
-        warnUI << "Color Management Mode: " << cm;
-        warnUI << ppVar(m_image->colorSpace());
-        warnUI << ppVar(destinationColorModelId);
-        warnUI << ppVar(destinationColorDepthId);
+        warnOpenGL << "WARNING: Internal color management was forcely enabled";
+        warnOpenGL << "Color Management Mode: " << cm;
+        warnOpenGL << ppVar(m_image->colorSpace());
+        warnOpenGL << ppVar(destinationColorModelId);
+        warnOpenGL << ppVar(destinationColorDepthId);
 
         cfg.setOcioColorManagementMode(KisConfig::INTERNAL);
         m_internalColorManagementActive = true;

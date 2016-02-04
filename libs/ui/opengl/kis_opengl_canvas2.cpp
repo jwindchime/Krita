@@ -238,16 +238,16 @@ void KisOpenGLCanvas2::initializeGL()
 //    KisConfig cfg;
 //    if (cfg.disableVSync()) {
 //        if (!VSyncWorkaround::tryDisableVSync(this)) {
-//            warnUI;
-//            warnUI << "WARNING: We didn't manage to switch off VSync on your graphics adapter.";
-//            warnUI << "WARNING: It means either your hardware or driver doesn't support it,";
-//            warnUI << "WARNING: or we just don't know about this hardware. Please report us a bug";
-//            warnUI << "WARNING: with the output of \'glxinfo\' for your card.";
-//            warnUI;
-//            warnUI << "WARNING: Trying to workaround it by disabling Double Buffering.";
-//            warnUI << "WARNING: You may see some flickering when painting with some tools. It doesn't";
-//            warnUI << "WARNING: affect the quality of the final image, though.";
-//            warnUI;
+//            warnOpenGL;
+//            warnOpenGL << "WARNING: We didn't manage to switch off VSync on your graphics adapter.";
+//            warnOpenGL << "WARNING: It means either your hardware or driver doesn't support it,";
+//            warnOpenGL << "WARNING: or we just don't know about this hardware. Please report us a bug";
+//            warnOpenGL << "WARNING: with the output of \'glxinfo\' for your card.";
+//            warnOpenGL;
+//            warnOpenGL << "WARNING: Trying to workaround it by disabling Double Buffering.";
+//            warnOpenGL << "WARNING: You may see some flickering when painting with some tools. It doesn't";
+//            warnOpenGL << "WARNING: affect the quality of the final image, though.";
+//            warnOpenGL;
 
 //            if (cfg.disableDoubleBuffering() && QOpenGLContext::currentContext()->format().swapBehavior() == QSurfaceFormat::DoubleBuffer) {
 //                errUI << "CRITICAL: Failed to disable Double Buffering. Lines may look \"bended\" on your image.";
@@ -259,11 +259,11 @@ void KisOpenGLCanvas2::initializeGL()
 //    }
 
     KisConfig cfg;
-    dbgUI << "OpenGL: Preparing to initialize OpenGL for KisCanvas";
+    dbgOpenGL << "OpenGL: Preparing to initialize OpenGL for KisCanvas";
     int glVersion = KisOpenGL::initializeContext(context());
     context()->format().setVersion(3, 2);
     context()->format().setProfile(QSurfaceFormat::CoreProfile);
-    dbgUI << "OpenGL: Version found" << glVersion;
+    dbgOpenGL << "OpenGL: Version found" << glVersion;
     initializeOpenGLFunctions();
     VSyncWorkaround::tryDisableVSync(context());
 
@@ -365,7 +365,7 @@ QOpenGLShaderProgram *KisOpenGLCanvas2::getCursorShader()
         d->cursorShader->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/cursor.frag");
         d->cursorShader->bindAttributeLocation("a_vertexPosition", PROGRAM_VERTEX_ATTRIBUTE);
         if (! d->cursorShader->link()) {
-            dbgUI << "OpenGL error" << glGetError();
+            dbgOpenGL << "OpenGL error" << glGetError();
             qFatal("Failed linking cursor shader");
         }
         Q_ASSERT(d->cursorShader->isLinked());
@@ -436,7 +436,7 @@ bool KisOpenGLCanvas2::isBusy() const
 void KisOpenGLCanvas2::drawCheckers()
 {
     if (!d->checkerShader) {
-        dbgUI << "no checker shader, not drawing";
+        dbgOpenGL << "no checker shader, not drawing";
         return;
     }
 
@@ -507,7 +507,7 @@ void KisOpenGLCanvas2::drawImage()
     KisCoordinatesConverter *converter = coordinatesConverter();
 
     if (!d->displayShader->bind()) {
-        dbgUI << "displayShader failed to bind!";
+        dbgOpenGL << "displayShader failed to bind!";
     }
 
     QMatrix4x4 projectionMatrix;
@@ -579,7 +579,7 @@ void KisOpenGLCanvas2::drawImage()
                     d->openGLImageTextures->getTextureTileCR(effectiveCol, effectiveRow);
 
             if (!tile) {
-                warnUI << "OpenGL: Trying to paint texture tile but it has not been created yet.";
+                warnOpenGL << "OpenGL: Trying to paint texture tile but it has not been created yet.";
                 continue;
             }
 
@@ -605,15 +605,15 @@ void KisOpenGLCanvas2::drawImage()
             if (d->displayFilter) {
                 glActiveTexture(GL_TEXTURE0 + 1);
 
-                dbgUI << "glActiveTexture" << glGetError();
+                dbgOpenGL << "glActiveTexture" << glGetError();
 
                 glBindTexture(GL_TEXTURE_3D, d->displayFilter->lutTexture());
 
-                dbgUI << "bindTexture" << glGetError();
+                dbgOpenGL << "bindTexture" << glGetError();
 
                 d->displayShader->setUniformValue(d->displayUniformLocationTexture1, 1);
 
-                dbgUI << "setUniformValue" << glGetError();
+                dbgOpenGL << "setUniformValue" << glGetError();
             }
 
             int currentLodPlane = tile->currentLodPlane();
@@ -628,7 +628,7 @@ void KisOpenGLCanvas2::drawImage()
             if (currentLodPlane) {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
-                dbgUI << "texparameteri lod" << glGetError();
+                dbgOpenGL << "texparameteri lod" << glGetError();
             } else if (SCALE_MORE_OR_EQUAL_TO(scaleX, scaleY, 2.0)) {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -638,13 +638,13 @@ void KisOpenGLCanvas2::drawImage()
                 case KisTextureTile::NearestFilterMode:
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-                    dbgUI << "texparameteri nearest" << glGetError();
+                    dbgOpenGL << "texparameteri nearest" << glGetError();
 
                     break;
                 case KisTextureTile::BilinearFilterMode:
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-                    dbgUI << "texparameteri bilinear" << glGetError();
+                    dbgOpenGL << "texparameteri bilinear" << glGetError();
 
                     break;
                 case KisTextureTile::TrilinearFilterMode:
@@ -673,7 +673,7 @@ void KisOpenGLCanvas2::reportShaderLinkFailedAndExit(bool result, const QString 
     KisConfig cfg;
 
     if (cfg.useVerboseOpenGLDebugOutput()) {
-        dbgUI << "GL-log:" << context << log;
+        dbgOpenGL << "GL-log:" << context << log;
     }
 
     if (result) return;

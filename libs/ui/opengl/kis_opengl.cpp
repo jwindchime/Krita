@@ -47,7 +47,7 @@ namespace
 void KisOpenGL::initialize()
 {
 #ifdef HAVE_OPENGL
-    dbgUI << "OpenGL: initializing";
+    dbgOpenGL << "OpenGL: initializing";
 
 //    KisConfig cfg;
 
@@ -72,7 +72,7 @@ void KisOpenGL::initialize()
 int KisOpenGL::initializeContext(QOpenGLContext* s) {
 #ifdef HAVE_OPENGL
     KisConfig cfg;
-    dbgUI << "OpenGL: Opening new context";
+    dbgOpenGL << "OpenGL: Opening new context";
 
     // Double check we were given the version we requested
     QSurfaceFormat format = s->format();
@@ -86,7 +86,7 @@ int KisOpenGL::initializeContext(QOpenGLContext* s) {
     Renderer = QString((const char*)f->glGetString(GL_RENDERER));
 
     QFile log(QDesktopServices::storageLocation(QDesktopServices::TempLocation) + "/krita-opengl.txt");
-    dbgUI << "Writing OpenGL log to" << log.fileName();
+    dbgOpenGL << "Writing OpenGL log to" << log.fileName();
     log.open(QFile::WriteOnly);
     QString vendor((const char*)f->glGetString(GL_VENDOR));
     log.write(vendor.toLatin1());
