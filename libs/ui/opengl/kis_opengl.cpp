@@ -18,10 +18,8 @@
 
 #include "opengl/kis_opengl.h"
 
-#ifdef HAVE_OPENGL
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
-#endif
 
 #include <QApplication>
 #include <QDir>
@@ -36,8 +34,6 @@
 
 namespace
 {
-#ifdef HAVE_OPENGL
-#endif
     bool NeedsFenceWorkaround = false;
     int glVersion = 0;
     QString Renderer;
@@ -46,7 +42,6 @@ namespace
 
 void KisOpenGL::initialize()
 {
-#ifdef HAVE_OPENGL
     dbgOpenGL << "OpenGL: initializing";
 
 //    KisConfig cfg;
@@ -65,12 +60,11 @@ void KisOpenGL::initialize()
     }
     format.setSwapInterval(0); // Disable vertical refresh syncing
     QSurfaceFormat::setDefaultFormat(format);
-
-#endif
 }
 
-int KisOpenGL::initializeContext(QOpenGLContext* s) {
-#ifdef HAVE_OPENGL
+int KisOpenGL::initializeContext(QOpenGLContext* s)
+{
+
     KisConfig cfg;
     dbgOpenGL << "OpenGL: Opening new context";
 
@@ -105,10 +99,7 @@ int KisOpenGL::initializeContext(QOpenGLContext* s) {
     if ((isOnX11 && Renderer.startsWith("AMD")) || cfg.forceOpenGLFenceWorkaround()) {
         NeedsFenceWorkaround = true;
     }
-#else
-    Q_UNUSED(s);
-    NeedsFenceWorkaround = false;
-#endif
+
     return glVersion;
 }
 
@@ -129,10 +120,4 @@ bool KisOpenGL::needsFenceWorkaround()
 QString KisOpenGL::renderer()
 {
     return Renderer;
-}
-
-bool KisOpenGL::hasOpenGL()
-{
-    // QT5TODO: figure out runtime whether we have opengl...
-    return true;
 }

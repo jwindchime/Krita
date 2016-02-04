@@ -18,10 +18,6 @@
 #ifndef KIS_OPENGL_IMAGE_TEXTURES_H_
 #define KIS_OPENGL_IMAGE_TEXTURES_H_
 
-#include <KoConfig.h> // for HAVE_OPENGL
-
-#ifdef HAVE_OPENGL
-
 #include <QVector>
 #include <QMap>
 
@@ -203,7 +199,4 @@ private:
     static ImageTexturesMap imageTexturesMap;
 };
 
-#endif // HAVE_OPENGL
-
 #endif // KIS_OPENGL_IMAGE_TEXTURES_H_
-

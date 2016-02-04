@@ -83,10 +83,7 @@
 #include <kis_brush_server.h>
 #include <kis_resource_server_provider.h>
 #include <KoResourceServerProvider.h>
-
-#ifdef HAVE_OPENGL
 #include "opengl/kis_opengl.h"
-#endif
 
 #include <CalligraVersionWrapper.h>
 
@@ -172,13 +169,11 @@ KisApplication::KisApplication(const QString &key, int &argc, char **argv)
     }
 
 
-#ifdef HAVE_OPENGL
     KisOpenGL::initialize();
-
+#if defined Q_OS_WIN
     /**
      * Warn about Intel's broken video drivers
      */
-#if defined HAVE_OPENGL && defined Q_OS_WIN
     KisConfig cfg;
     QString renderer = KisOpenGL::renderer();
     if (cfg.useOpenGL() && renderer.startsWith("Intel") && !cfg.readEntry("WarnedAboutIntel", false)) {
@@ -190,8 +185,6 @@ KisApplication::KisApplication(const QString &key, int &argc, char **argv)
                                       "You can also disable OpenGL rendering in Krita's Settings.\n"));
         cfg.writeEntry("WarnedAboutIntel", true);
     }
-#endif
-
 #endif
 
 }

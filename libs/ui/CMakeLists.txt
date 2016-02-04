@@ -368,6 +368,12 @@ set(kritaui_LIB_SRCS
     KisPaletteModel.cpp
     KisColorsetChooser.cpp
 
+    kis_animation_frame_cache.cpp
+    kis_animation_cache_populator.cpp
+    canvas/kis_animation_player.cpp
+    kis_animation_exporter.cpp
+    kis_animation_importer.cpp
+
     opengl/paintengine/qopengl2pexvertexarray.cpp
     opengl/paintengine/qopenglcustomshaderstage.cpp
     opengl/paintengine/qopenglengineshadermanager.cpp
@@ -391,16 +397,6 @@ if(WIN32)
         input/wintab/kis_screen_size_choice_dialog.cpp
         qtlockedfile/qtlockedfile_win.cpp
         )
-endif()
-if (HAVE_OPENGL)
-    set(kritaui_LIB_SRCS
-        ${kritaui_LIB_SRCS}
-        kis_animation_frame_cache.cpp
-        kis_animation_cache_populator.cpp
-        canvas/kis_animation_player.cpp
-        kis_animation_exporter.cpp
-        kis_animation_importer.cpp
-    )
 endif()
 
 if(UNIX)
@@ -520,23 +516,21 @@ if (NOT WIN32 AND NOT APPLE)
                                 ${XCB_LIBRARIES})
 endif()
 
-if(APPLE)
+if (APPLE)
     target_link_libraries(kritaui ${FOUNDATION_LIBRARY})
 endif ()
 
 
-if(HAVE_OPENEXR)
+if (HAVE_OPENEXR)
     target_link_libraries(kritaui ${OPENEXR_LIBRARIES})
 endif()
 
-if(HAVE_OPENGL)
-    # Add VSync disable workaround
-    if(NOT WIN32 AND NOT APPLE)
-      target_link_libraries(kritaui ${CMAKE_DL_LIBS} Qt5::X11Extras)
-    endif()
+# Add VSync disable workaround
+if (NOT WIN32 AND NOT APPLE)
+    target_link_libraries(kritaui ${CMAKE_DL_LIBS} Qt5::X11Extras)
 endif()
 
-if(X11_FOUND)
+if (X11_FOUND)
     target_link_libraries(kritaui Qt5::X11Extras ${X11_LIBRARIES})
 endif()
 

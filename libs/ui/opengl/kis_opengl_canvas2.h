@@ -20,10 +20,6 @@
 #ifndef KIS_OPENGL_CANVAS_2_H
 #define KIS_OPENGL_CANVAS_2_H
 
-#include <KoConfig.h> // for HAVE_OPENGL
-
-#ifdef HAVE_OPENGL
-
 #include "paintengine/qopenglwidget.h"
 #include <QOpenGLFunctions>
 
@@ -115,5 +111,4 @@ private:
     GLuint *vboHandles;
 };
 
-#endif // HAVE_OPENGL
 #endif // KIS_OPENGL_CANVAS_2_H

@@ -84,10 +84,8 @@ extern "C" int main(int argc, char **argv)
     QCoreApplication::setAttribute(Qt::AA_X11InitThreads, true);
 #endif
 
-#if defined HAVE_OPENGL
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
     QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings, true);
-#endif
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
 
     KLocalizedString::setApplicationDomain("krita");

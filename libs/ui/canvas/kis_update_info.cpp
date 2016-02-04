@@ -33,8 +33,6 @@ QRect KisPPUpdateInfo::dirtyImageRect() const {
     return dirtyImageRectVar;
 }
 
-#ifdef HAVE_OPENGL
-
 KisOpenGLUpdateInfo::KisOpenGLUpdateInfo(ConversionOptions options)
     : m_options(options)
 {
@@ -59,6 +57,7 @@ bool KisOpenGLUpdateInfo::needsConversion() const
 {
     return m_options.m_needsConversion;
 }
+
 void KisOpenGLUpdateInfo::convertColorSpace()
 {
     KIS_ASSERT_RECOVER_RETURN(needsConversion());
@@ -70,4 +69,3 @@ void KisOpenGLUpdateInfo::convertColorSpace()
     }
 }
 
-#endif /* HAVE_OPENGL */

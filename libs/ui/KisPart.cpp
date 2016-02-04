@@ -69,9 +69,7 @@
 #include "kis_image_from_clipboard_widget.h"
 #include "kis_shape_controller.h"
 #include "kis_resource_server_provider.h"
-#ifdef HAVE_OPENGL
 #include "kis_animation_cache_populator.h"
-#endif
 #include "kis_idle_watcher.h"
 #include "kis_image.h"
 #include "KisImportExportManager.h"
@@ -93,9 +91,7 @@ public:
     Private(KisPart *_part)
         : part(_part)
         , idleWatcher(2500)
-#ifdef HAVE_OPENGL
         , animationCachePopulator(_part)
-#endif
     {
     }
 
@@ -115,9 +111,8 @@ public:
     KActionCollection *actionCollection{0};
 
     KisIdleWatcher idleWatcher;
-#ifdef HAVE_OPENGL
     KisAnimationCachePopulator animationCachePopulator;
-#endif
+
     void loadActions();
 };
 
@@ -157,12 +152,10 @@ KisPart::KisPart()
 
     connect(KisActionRegistry::instance(), SIGNAL(shortcutsUpdated()),
             this, SLOT(updateShortcuts()));
-#ifdef HAVE_OPENGL
     connect(&d->idleWatcher, SIGNAL(startedIdleMode()),
             &d->animationCachePopulator, SLOT(slotRequestRegeneration()));
 
     d->animationCachePopulator.slotRequestRegeneration();
-#endif
 }
 
 KisPart::~KisPart()
@@ -384,12 +377,10 @@ KisIdleWatcher* KisPart::idleWatcher() const
     return &d->idleWatcher;
 }
 
-#ifdef HAVE_OPENGL
 KisAnimationCachePopulator* KisPart::cachePopulator() const
 {
     return &d->animationCachePopulator;
 }
-#endif
 
 void KisPart::openExistingFile(const QUrl &url)
 {

@@ -21,8 +21,6 @@
 
 #include <opengl/kis_opengl.h>
 
-#ifdef HAVE_OPENGL
-
 /**
  * This is a workaround for a very slow updates in OpenGL canvas (~6ms).
  * The delay happens because of VSync in the swapBuffers() call. At first
@@ -31,7 +29,6 @@
  *
  * This file is effectively a bit of copy-paste from qgl_x11.cpp
  */
-
 
 #if defined Q_OS_LINUX
 
@@ -255,6 +252,4 @@ namespace Sync {
         }
     }
 }
-
-#endif // HAVE_OPENGL
 #endif // KIS_OPENGL_CANVAS_2_P_H

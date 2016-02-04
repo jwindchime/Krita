@@ -217,8 +217,6 @@ set(kis_multinode_property_test_SRCS kis_multinode_property_test.cpp)
 kde4_add_unit_test(KisMultinodePropertyTest TESTNAME krita-image-BaseNodeTest ${kis_multinode_property_test_SRCS})
 target_link_libraries(KisMultinodePropertyTest kritaimage kritaui Qt5::Test)
 
-if (HAVE_OPENGL)
-
 ########### next target ###############
 
 set(kis_animation_exporter_test_SRCS kis_animation_exporter_test.cpp )
@@ -242,6 +240,3 @@ target_link_libraries(KisAnimationFrameCacheTest kritaui kritaimage ${QT_QTTEST_
 set(ResourceBundleTest_SRCS ResourceBundleTest.cpp ../KisResourceBundle.cpp ../KisResourceBundleManifest.cpp)
 kde4_add_unit_test(ResourceBundleTest TESTNAME krita-resourcemanager-ResourceBundleTest ${ResourceBundleTest_SRCS})
 target_link_libraries(ResourceBundleTest kritaui kritalibbrush kritalibpaintop Qt5::Test )
-
-
-endif ()

@@ -165,10 +165,11 @@ public: // KisCanvas2 methods
     KisExposureGammaCorrectionInterface* exposureGammaCorrectionInterface() const;
 
     void setCursor(const QCursor &cursor);
-#ifdef HAVE_OPENGL
+
     KisAnimationFrameCacheSP frameCache() const;
+
     KisAnimationPlayer *animationPlayer() const;
-#endif
+
     void refetchDataFromImage();
 
 Q_SIGNALS:
