@@ -215,7 +215,7 @@ public:
     void setDefault();
 protected Q_SLOTS:
     void slotUseOpenGLToggled(bool isChecked);
-
+    void versionSelected(int version);
 public:
     KoColorPopupAction *m_selectionOverlayColorAction;
 };

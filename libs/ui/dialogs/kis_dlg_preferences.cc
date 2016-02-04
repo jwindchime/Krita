@@ -700,6 +700,7 @@ DisplaySettingsTab::DisplaySettingsTab(QWidget *parent, const char *name)
     chkHidePopups->setChecked(cfg.hidePopups());
 
     connect(grpOpenGL, SIGNAL(toggled(bool)), SLOT(slotUseOpenGLToggled(bool)));
+    connect(cmbOpenGLVersion, SIGNAL(activated(int)), SLOT(versionSelected(int)));
 }
 
 void DisplaySettingsTab::setDefault()
@@ -758,6 +759,19 @@ void DisplaySettingsTab::slotUseOpenGLToggled(bool isChecked)
 #else
     Q_UNUSED(isChecked);
 #endif
+}
+
+void DisplaySettingsTab::versionSelected(int version)
+{
+    int selectedFilter = cmbFilterMode->currentIndex();
+    cmbFilterMode->clear();
+    cmbFilterMode->addItem(i18n("Nearest Neighbour"));
+    cmbFilterMode->addItem(i18n("Bilinear Filtering"));
+    cmbFilterMode->addItem(i18n("Triilinear Filtering"));
+    if (version > 0) {
+        cmbFilterMode->addItem(i18n("High Quality Filtering"));
+    }
+    cmbFilterMode->setCurrentIndex(qMin(selectedFilter, cmbFilterMode->count() -1));
 }
 
 //---------------------------------------------------------------------------------------------------
@@ -1152,4 +1166,3 @@ bool KisDlgPreferences::editPreferences()
     delete dialog;
     return baccept;
 }
-

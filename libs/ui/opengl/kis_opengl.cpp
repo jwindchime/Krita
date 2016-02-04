@@ -114,8 +114,11 @@ int KisOpenGL::initializeContext(QOpenGLContext* s) {
 
 bool KisOpenGL::supportsFenceSync()
 {
-    // return glVersion > 302;
-    return true;
+    KisConfig cfg;
+    // 0: 2.1
+    // 1: 3.2
+    // ... undecides
+    return cfg.openGLVersion() > 0;
 }
 
 bool KisOpenGL::needsFenceWorkaround()
