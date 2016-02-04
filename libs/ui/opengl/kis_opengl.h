@@ -58,8 +58,6 @@ public:
      */
     static bool needsFenceWorkaround();
 
-    static QString renderer();
-
 private:
     KisOpenGL();
 

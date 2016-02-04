@@ -652,9 +652,6 @@ DisplaySettingsTab::DisplaySettingsTab(QWidget *parent, const char *name)
     cmbOpenGLVersion->setCurrentIndex(cfg.openGLVersion());
     chkUseTextureBuffer->setEnabled(cfg.useOpenGL());
     chkUseTextureBuffer->setChecked(cfg.useOpenGLTextureBuffer());
-    chkDisableDoubleBuffering->setVisible(cfg.showAdvancedOpenGLSettings());
-    chkDisableDoubleBuffering->setEnabled(cfg.useOpenGL());
-    chkDisableDoubleBuffering->setChecked(cfg.disableDoubleBuffering());
     chkDisableVsync->setVisible(cfg.showAdvancedOpenGLSettings());
     chkDisableVsync->setEnabled(cfg.useOpenGL());
     chkDisableVsync->setChecked(cfg.disableVSync());
@@ -698,8 +695,6 @@ void DisplaySettingsTab::setDefault()
     cmbOpenGLVersion->setCurrentIndex(cfg.openGLVersion(true));
     chkUseTextureBuffer->setChecked(cfg.useOpenGLTextureBuffer(true));
     chkUseTextureBuffer->setEnabled(true);
-    chkDisableDoubleBuffering->setEnabled(true);
-    chkDisableDoubleBuffering->setChecked(cfg.disableDoubleBuffering(true));
     chkDisableVsync->setEnabled(true);
     chkDisableVsync->setChecked(cfg.disableVSync(true));
     cmbFilterMode->setEnabled(true);
@@ -722,7 +717,6 @@ void DisplaySettingsTab::setDefault()
 void DisplaySettingsTab::slotUseOpenGLToggled(bool isChecked)
 {
     chkUseTextureBuffer->setEnabled(isChecked);
-    chkDisableDoubleBuffering->setEnabled(isChecked);
     chkDisableVsync->setEnabled(isChecked);
     cmbFilterMode->setEnabled(isChecked);
     cmbOpenGLVersion->setEnabled(isChecked);
@@ -1088,7 +1082,6 @@ bool KisDlgPreferences::editPreferences()
         cfg.setUseOpenGL(dialog->m_displaySettings->grpOpenGL->isChecked());
         cfg.setUseOpenGLTextureBuffer(dialog->m_displaySettings->chkUseTextureBuffer->isChecked());
         cfg.setOpenGLFilteringMode(dialog->m_displaySettings->cmbFilterMode->currentIndex());
-        cfg.setDisableDoubleBuffering(dialog->m_displaySettings->chkDisableDoubleBuffering->isChecked());
         cfg.setDisableVSync(dialog->m_displaySettings->chkDisableVsync->isChecked());
         cfg.setOpenGLVersion(dialog->m_displaySettings->cmbOpenGLVersion->currentIndex());
 

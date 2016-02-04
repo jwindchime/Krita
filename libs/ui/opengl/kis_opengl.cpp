@@ -39,38 +39,42 @@ namespace
     QString Renderer;
 }
 
-
 void KisOpenGL::initialize()
 {
     dbgOpenGL << "OpenGL: initializing";
-
-//    KisConfig cfg;
+    KisConfig cfg;
 
     QSurfaceFormat format;
-    format.setProfile(QSurfaceFormat::CoreProfile);
     format.setDepthBufferSize(24);
     format.setStencilBufferSize(8);
-    format.setVersion(3, 2);
-    // if (cfg.disableDoubleBuffering()) {
-    if (false) {
-        format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
+
+    if (cfg.openGLVersion() == 0) {
+        format.setVersion(2, 1);
     }
     else {
-        format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+        format.setVersion(3, 2);
+        format.setProfile(QSurfaceFormat::CoreProfile);
     }
+    format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
     format.setSwapInterval(0); // Disable vertical refresh syncing
+
     QSurfaceFormat::setDefaultFormat(format);
+
+    glVersion = 100 * QSurfaceFormat::defaultFormat().majorVersion() + QSurfaceFormat::defaultFormat().minorVersion();
+    dbgOpenGL << "GL Version:" << glVersion << QSurfaceFormat::defaultFormat().swapInterval() << QSurfaceFormat::defaultFormat().swapBehavior();
+
 }
 
-int KisOpenGL::initializeContext(QOpenGLContext* s)
+int KisOpenGL::initializeContext(QOpenGLContext* ctx)
 {
-
     KisConfig cfg;
     dbgOpenGL << "OpenGL: Opening new context";
 
     // Double check we were given the version we requested
-    QSurfaceFormat format = s->format();
+    QSurfaceFormat format = ctx->format();
     glVersion = 100 * format.majorVersion() + format.minorVersion();
+
+    dbgOpenGL << "GL Version:" << glVersion << format.swapInterval() << format.swapBehavior();
 
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
@@ -78,16 +82,18 @@ int KisOpenGL::initializeContext(QOpenGLContext* s)
 #  define GL_RENDERER 0x1F01
 #endif
     Renderer = QString((const char*)f->glGetString(GL_RENDERER));
+    QString vendor((const char*)f->glGetString(GL_VENDOR));
+    QString version((const char*)f->glGetString(GL_VERSION));
+
+    dbgOpenGL << "Vendor:" << vendor << "Renderer" << Renderer << "version" << version;
 
     QFile log(QDesktopServices::storageLocation(QDesktopServices::TempLocation) + "/krita-opengl.txt");
     dbgOpenGL << "Writing OpenGL log to" << log.fileName();
     log.open(QFile::WriteOnly);
-    QString vendor((const char*)f->glGetString(GL_VENDOR));
     log.write(vendor.toLatin1());
     log.write(", ");
     log.write(Renderer.toLatin1());
     log.write(", ");
-    QString version((const char*)f->glGetString(GL_VERSION));
     log.write(version.toLatin1());
 
     // Check if we have a bugged driver that needs fence workaround
@@ -115,9 +121,4 @@ bool KisOpenGL::supportsFenceSync()
 bool KisOpenGL::needsFenceWorkaround()
 {
     return NeedsFenceWorkaround;
-}
-
-QString KisOpenGL::renderer()
-{
-    return Renderer;
 }

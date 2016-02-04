@@ -635,17 +635,6 @@ int KisConfig::openGLTextureSize(bool defaultValue) const
     return (defaultValue ? 256 : m_cfg.readEntry("textureSize", 256));
 }
 
-
-bool KisConfig::disableDoubleBuffering(bool defaultValue) const
-{
-    return (defaultValue ? true : m_cfg.readEntry("disableDoubleBuffering", true));
-}
-
-void KisConfig::setDisableDoubleBuffering(bool disableDoubleBuffering)
-{
-    m_cfg.writeEntry("disableDoubleBuffering", disableDoubleBuffering);
-}
-
 bool KisConfig::disableVSync(bool defaultValue) const
 {
     return (defaultValue ? true : m_cfg.readEntry("disableVSync", true));
