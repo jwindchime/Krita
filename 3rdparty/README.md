@@ -26,11 +26,12 @@ Note: on all operating systems the entire procedure is done in a terminal window
     * Linux: gcc, minimum version 4.8
     * OSX: clang, you need to install xcode for this
     * Windows: MSVC 2015 Community Edition: https://www.visualstudio.com/en-us/products/visual-studio-community-vs.aspx
+4. If you compile Qt on Windows, you will also need Python 2.7: https://www.python.org/download/releases/2.7/. Make sure to have python.exe in you path.
 
 == Setup your environment ==
 
 Windows Only:
-    When launching the commands from the console, run first "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\vcvars64.bat" in it, this way all the environment variables for the compiler will be ready.
+    When launching the commands from the console, run first "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\vcvars64.bat" in it (include the quotes). This way all the environment variables for the compiler will be ready.
 
 == Prepare your directory layout ==
 
@@ -48,7 +49,13 @@ Windows Only:
 
 == Qt ==
 
-Install Qt. Either build from source or with the qt.io installer. Make sure qmake is in your path. You need qtbase, qtsvg, qttools, qtscript, qtdeclarative, qtgraphicaleffects, qttranslations. On Windows, you also need qtwinextras, on Linux qtx11extras.
+Install Qt. Either build from source or with the qt.io installer. 
+
+Either way, make sure qmake is in your environment path. If you are using Qt 5.6 for example, this is the default location for Windows:
+C:\Qt\Qt5.6.0\5.6\msvc2015_64\bin
+
+
+You need qtbase, qtsvg, qttools, qtscript, qtdeclarative, qtgraphicaleffects, qttranslations. On Windows, you also need qtwinextras, on Linux qtx11extras.
 
 When installing from source, you can use these example configure commands:
  
@@ -117,7 +124,15 @@ When installing from source, you can use these example configure commands:
 
 * Windows
 
-    configure -skip qt3d -skip qtactiveqt -skip qtcanvas3d -skip qtconnectivity -skip qtdoc -skip qtenginio -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtsensors -skip qtserialport -skip qtwayland -skip qtwebchannel -skip qtwebengine -skip qtwebsockets -skip qtxmlpatterns -opensource -confirm-license -release -no-qml-debug -no-mtdev -no-openssl -no-libproxy -no-nis -no-dbus  -no-system-proxies -no-libproxy -opengl desktop -prefix %BUILDROOT%\i
+    To do a normal release build use:
+
+    configure -skip qt3d -skip qtactiveqt -skip qtcanvas3d -skip qtconnectivity -skip qtdoc -skip qtenginio -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtsensors -skip qtserialport -skip qtwayland -skip qtwebchannel -skip qtwebengine -skip qtwebsockets -skip qtwebview -skip qtxmlpatterns -no-sql-sqlite -nomake examples -nomake tools -no-compile-examples -no-dbus -no-iconv -no-angle -no-ssl -no-openssl -no-wmf-backend -no-qml-debug -no-libproxy -no-system-proxies -no-nis -no-icu -no-mtdev -opensource -confirm-license -release -opengl desktop -qt-zlib -qt-pcre -qt-libpng -qt-libjpeg -prefix %BUILDROOT%\i
+
+    If a release with debug info for developing purposes is needed, add the -force-debug-info to the configure options above, so that the pdb files will be generated.
+
+    N.B.: if you don't have the Qt 5.6 pre-built binaries already installed, you will need to copy Qt5Core.dll, coming from those binaries inside the Qt build directory, under the path qtbase\bin, otherwise you'll get an error
+    about it missing when using jom and a more cryptic error with nmake. The same has to be done with Qt5Xml.dll, to be copied under qttools\bin.
+    Don't use the dlls coming from the QtCreator folder, they won't work.
 
 == Prepare the externals build ==
 
@@ -154,15 +169,6 @@ On all operating systems:
     cmake --build . --config RelWithDebInfo --target ext_eigen3
     cmake --build . --config RelWithDebInfo --target ext_exiv2
     cmake --build . --config RelWithDebInfo --target ext_fftw3
-
-Note for Windows:
-
-fftw3 is still broken, don't know why. Copy the bin, lib and include folders from 
-
-    \b\ext_fftw3\ext_fftw3-prefix\src\ext_fftw3
-
-manuall to BUILDROOT\i
-
     cmake --build . --config RelWithDebInfo --target ext_ilmbase
     cmake --build . --config RelWithDebInfo --target ext_jpeg
     cmake --build . --config RelWithDebInfo --target ext_lcms2
@@ -177,15 +183,6 @@ for the two utilities correctly, then try to build openexr again.
 
     install_name_tool -add_rpath $BUILD_ROOT/i/lib $BUILD_ROOT/b/ext_openexr/ext_openexr-prefix/src/ext_openexr-build/IlmImf/./b44ExpLogTable
     install_name_tool -add_rpath $BUILD_ROOT/i/lib $BUILD_ROOT/b/ext_openexr/ext_openexr-prefix/src/ext_openexr-build/IlmImf/./dwaLookups
-
-Note for Windows:
-
-With MSVC 2015, the boost library has a name that later on makes the libraries unfindable, so you need to copy them.
-
-    cd BUILDROOT\i\lib
-    copy boost_system-vc-mt-1_55.dll boost_system-vc140-mt-1_55.dll
-    copy boost_system-vc-mt-1_55.lib boost_system-vc140-mt-1_55.lib
-
 
 On All operating systems:
 
@@ -274,11 +271,15 @@ On OSX
 
     BUILDROOT/i/bin/krita.app/Contents/MacOS/krita
 
+== Packaging a Windows Build ==
+If you want to create a stripped down version of Krita to distribute, after building everything just copy the makepkg.bat file from the "windows" folder inside krita root source folder, next to the install folder and run it.
+That will copy the Krita necessary files into the specified folder and leave behind developer related files, so the resulting folder will be a smaller install folder.
+
 == Common Issues ==
-On Windows, if you get a 'mspdb140.dll' missing alert window, it means you did not run the bat file. Make sure to include the quotes in the command.
+- On Windows, if you get a 'mspdb140.dll' missing alert window, it means you did not run the bat file. Make sure to include the quotes in the command:
+  "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\vcvars64.bat"
 
-"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\vcvars64.bat"
+- On Windows, if you get an error about Qt5Core.dll missing/not found or nmake exit with an error that mention QT_PLUGIN_PATH, you have to copy a couple of dlls in the Qt build directory, look
+  for the N.B. in the Qt instructions at the start of the Readme.
 
-
- 
-
+- If you receive an error while compiling about "missing QtCore5.cmake", or something similar, check to make sure qmake is in your PATH. Restart your command line after any changes are made.

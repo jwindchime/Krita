@@ -442,7 +442,13 @@ KisMainWindow::KisMainWindow()
 
     QString doc;
     QStringList allFiles = KoResourcePaths::findAllResources("data", "krita/krita.rc");
-    KIS_ASSERT(allFiles.size() > 0); // We need at least one krita.rc file!
+    // We need at least one krita.rc file!
+    if (allFiles.size() == 0) {
+        m_errorMessage = i18n("Krita cannot find the configuration file! Krita will quit now.");
+        m_dieOnError = true;
+        QTimer::singleShot(0, this, SLOT(showErrorAndDie()));
+        return;
+    }
     setXMLFile(findMostRecentXMLFile(allFiles, doc));
 
     guiFactory()->addClient(this);
@@ -934,7 +940,8 @@ bool KisMainWindow::saveDocument(KisDocument *document, bool saveas, bool silent
         else {
             dialog.setDefaultDir(suggestedURL.toLocalFile(), true);
         }
-        dialog.setMimeTypeFilters(mimeFilter, KIS_MIME_TYPE);
+        // Default to all supported file types if user is exporting, otherwise use Krita default
+        dialog.setMimeTypeFilters(mimeFilter, isExporting() ? "" : KIS_MIME_TYPE);
         QUrl newURL = QUrl::fromUserInput(dialog.filename());
 
         if (newURL.isLocalFile()) {
