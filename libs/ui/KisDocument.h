@@ -554,17 +554,6 @@ public:
      */
     KUndo2Stack *undoStack();
 
-
-    /**
-     * Set the output stream to report profile information to.
-     */
-    void setProfileStream(QTextStream *profilestream);
-
-    /**
-     * Set the output stream to report profile information to.
-     */
-    void setProfileReferenceTime(const QTime& referenceTime);
-
 public Q_SLOTS:
 
     /**
@@ -646,13 +635,6 @@ private:
      * This method is called from the KReadOnlyPart::openUrl method.
      */
     bool openFile();
-
-    /**
-     * This method is called by @a openFile() to allow applications to setup there
-     * own KoProgressUpdater-subTasks which are then taken into account for the
-     * displayed progressbar during loading.
-     */
-    void setupOpenFileSubProgress();
 
     /**
      *  Saves a document to KReadOnlyPart::m_file (KParts takes care of uploading
