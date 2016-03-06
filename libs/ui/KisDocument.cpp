@@ -355,8 +355,7 @@ public:
 
     QList<KisPaintingAssistant*> assistants;
 
-    bool openFile()
-    {
+    bool openFile() {
         DocumentProgressProxy *progressProxy = 0;
         if (!document->progressProxy()) {
             KisMainWindow *mainWindow = 0;
@@ -436,7 +435,8 @@ KisDocument::KisDocument()
     d->undoStack->setParent(this);
 
     d->isEmpty = true;
-    d->filterManager = new KisImportExportManager(this, d->progressUpdater);
+    d->filterManager = new KisImportExportManager(this);
+    d->filterManager->setProgresUpdater(d->progressUpdater);
 
     connect(&d->autoSaveTimer, SIGNAL(timeout()), this, SLOT(slotAutoSave()));
     setAutoSave(defaultAutoSave());
@@ -589,13 +589,21 @@ bool KisDocument::saveFile()
         KBackup::backupFile(url().toLocalFile(), d->backupPath);
     }
 
-    emit statusBarMessage(i18n("Saving..."));
     qApp->processEvents();
+
     bool ret = false;
     bool suppressErrorDialog = false;
+
+    // create the main progress monitoring object for loading, this can
+    // contain subtasks for filtering and loading
+    d->progressUpdater = new KoProgressUpdater(d->progressProxy, KoProgressUpdater::Unthreaded);
+    d->progressUpdater->start(100, i18n("Saving Document"));
+    d->filterManager->setProgresUpdater(d->progressUpdater);
+
     if (!isNativeFormat(outputMimeType)) {
         dbgUI << "Saving to format" << outputMimeType << "in" << localFilePath();
         // Not native format : save using export filter
+        d->filterManager->setProgresUpdater(d->progressUpdater);
         KisImportExportFilter::ConversionStatus status = d->filterManager->exportDocument(localFilePath(), outputMimeType);
         ret = status == KisImportExportFilter::OK;
         suppressErrorDialog = (status == KisImportExportFilter::UserCancelled || status == KisImportExportFilter::BadConversionGraph);
@@ -606,13 +614,22 @@ bool KisDocument::saveFile()
         ret = saveNativeFormat(localFilePath());
     }
 
+
     if (ret) {
+        QPointer<KoUpdater> updater = d->progressUpdater->startSubtask(1, "clear undo stack");
+        updater->setProgress(0);
         d->undoStack->setClean();
+        updater->setProgress(100);
+
         removeAutoSaveFiles();
         // Restart the autosave timer
         // (we don't want to autosave again 2 seconds after a real save)
         setAutoSave(d->autoSaveDelay);
     }
+
+    delete d->progressUpdater;
+    d->filterManager->setProgresUpdater(0);
+    d->progressUpdater = 0;
 
     QApplication::restoreOverrideCursor();
     if (!ret) {
@@ -645,7 +662,6 @@ bool KisDocument::saveFile()
         d->mimeType = outputMimeType;
         setConfirmNonNativeSave(isExporting(), false);
     }
-    emit clearStatusBarMessage();
 
     return ret;
 }
@@ -1201,16 +1217,13 @@ bool KisDocument::openFile()
 
     // create the main progress monitoring object for loading, this can
     // contain subtasks for filtering and loading
-    KoProgressProxy *progressProxy = 0;
-    if (d->progressProxy) {
-        progressProxy = d->progressProxy;
-    }
-
-    d->progressUpdater = new KoProgressUpdater(progressProxy, KoProgressUpdater::Unthreaded);
+    d->progressUpdater = new KoProgressUpdater(d->progressProxy, KoProgressUpdater::Unthreaded);
     d->progressUpdater->start(100, i18n("Opening Document"));
+    d->filterManager->setProgresUpdater(d->progressUpdater);
 
     if (!isNativeFormat(typeName.toLatin1())) {
         KisImportExportFilter::ConversionStatus status;
+
         importedFile = d->filterManager->importDocument(localFilePath(), typeName, status);
         if (status != KisImportExportFilter::OK) {
             QApplication::restoreOverrideCursor();
@@ -1286,6 +1299,7 @@ bool KisDocument::openFile()
 
             d->isLoading = false;
             delete d->progressUpdater;
+            d->filterManager->setProgresUpdater(0);
             d->progressUpdater = 0;
             return false;
         }
@@ -1338,14 +1352,13 @@ bool KisDocument::openFile()
         emit sigLoadingFinished();
     }
 
-    if (progressUpdater()) {
-        QPointer<KoUpdater> updater
-                = progressUpdater()->startSubtask(1, "clear undo stack");
-        updater->setProgress(0);
-        undoStack()->clear();
-        updater->setProgress(100);
-    }
+    QPointer<KoUpdater> updater = d->progressUpdater->startSubtask(1, "clear undo stack");
+    updater->setProgress(0);
+    undoStack()->clear();
+    updater->setProgress(100);
+
     delete d->progressUpdater;
+    d->filterManager->setProgresUpdater(0);
     d->progressUpdater = 0;
 
     d->isLoading = false;
@@ -1784,8 +1797,6 @@ bool KisDocument::completeLoading(KoStore* store)
 
 bool KisDocument::completeSaving(KoStore* store)
 {
-    QString uri = url().url();
-
     d->kraSaver->saveKeyframes(store, url().url(), isStoredExtern());
     d->kraSaver->saveBinaryData(store, d->image, url().url(), isStoredExtern(), isAutosaving());
     bool retval = true;
@@ -2047,12 +2058,6 @@ void KisDocument::setUnit(const KoUnit &unit)
     }
 }
 
-void KisDocument::saveUnitOdf(KoXmlWriter *settingsWriter) const
-{
-    settingsWriter->addConfigItem("unit", unit().symbol());
-}
-
-
 KUndo2Stack *KisDocument::undoStack()
 {
     return d->undoStack;
@@ -2194,8 +2199,9 @@ bool KisDocument::saveAs( const QUrl &kurl )
 bool KisDocument::save()
 {
     d->m_saveOk = false;
-    if ( d->m_file.isEmpty() ) // document was created empty
+    if ( d->m_file.isEmpty() ) { // document was created empty
         d->prepareSaving();
+    }
 
     updateEditingTime(true);
 
