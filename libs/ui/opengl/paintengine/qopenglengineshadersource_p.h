@@ -52,16 +52,16 @@ QT_BEGIN_NAMESPACE
 
 
 
-static const char* const qopenglslMainVertexShader = "\n\
+static const char* const qopenglslMainVertexShader = "#version 150 core \n\
     void setPosition(); \n\
     void main(void) \n\
     { \n\
         setPosition(); \n\
     }\n";
 
-static const char* const qopenglslMainWithTexCoordsVertexShader = "\n\
-    attribute highp   vec2      textureCoordArray; \n\
-    varying   highp   vec2      textureCoords; \n\
+static const char* const qopenglslMainWithTexCoordsVertexShader = "#version 150 core \n\
+    in highp   vec2      textureCoordArray; \n\
+    out   highp   vec2      textureCoords; \n\
     void setPosition(); \n\
     void main(void) \n\
     { \n\
@@ -69,11 +69,11 @@ static const char* const qopenglslMainWithTexCoordsVertexShader = "\n\
         textureCoords = textureCoordArray; \n\
     }\n";
 
-static const char* const qopenglslMainWithTexCoordsAndOpacityVertexShader = "\n\
-    attribute highp   vec2      textureCoordArray; \n\
-    attribute lowp    float     opacityArray; \n\
-    varying   highp   vec2      textureCoords; \n\
-    varying   lowp    float     opacity; \n\
+static const char* const qopenglslMainWithTexCoordsAndOpacityVertexShader = "#version 150 core \n\
+    in highp   vec2      textureCoordArray; \n\
+    in lowp    float     opacityArray; \n\
+    out   highp   vec2      textureCoords; \n\
+    out   lowp    float     opacity; \n\
     void setPosition(); \n\
     void main(void) \n\
     { \n\
@@ -85,10 +85,10 @@ static const char* const qopenglslMainWithTexCoordsAndOpacityVertexShader = "\n\
 // NOTE: We let GL do the perspective correction so texture lookups in the fragment
 //       shader are also perspective corrected.
 static const char* const qopenglslPositionOnlyVertexShader = "\n\
-    attribute highp   vec2      vertexCoordsArray; \n\
-    attribute highp   vec3      pmvMatrix1; \n\
-    attribute highp   vec3      pmvMatrix2; \n\
-    attribute highp   vec3      pmvMatrix3; \n\
+    in highp   vec2      vertexCoordsArray; \n\
+    in highp   vec3      pmvMatrix1; \n\
+    in highp   vec3      pmvMatrix2; \n\
+    in highp   vec3      pmvMatrix3; \n\
     void setPosition(void) \n\
     { \n\
         highp mat3 pmvMatrix = mat3(pmvMatrix1, pmvMatrix2, pmvMatrix3); \n\
@@ -98,14 +98,14 @@ static const char* const qopenglslPositionOnlyVertexShader = "\n\
 
 static const char* const qopenglslComplexGeometryPositionOnlyVertexShader = "\n\
     uniform highp mat3 matrix; \n\
-    attribute highp vec2 vertexCoordsArray; \n\
+    in highp vec2 vertexCoordsArray; \n\
     void setPosition(void) \n\
     { \n\
       gl_Position = vec4(matrix * vec3(vertexCoordsArray, 1), 1);\n\
     } \n";
 
 static const char* const qopenglslUntransformedPositionVertexShader = "\n\
-    attribute highp   vec4      vertexCoordsArray; \n\
+    in highp   vec4      vertexCoordsArray; \n\
     void setPosition(void) \n\
     { \n\
         gl_Position = vertexCoordsArray; \n\
@@ -113,14 +113,14 @@ static const char* const qopenglslUntransformedPositionVertexShader = "\n\
 
 // Pattern Brush - This assumes the texture size is 8x8 and thus, the inverted size is 0.125
 static const char* const qopenglslPositionWithPatternBrushVertexShader = "\n\
-    attribute highp   vec2      vertexCoordsArray; \n\
-    attribute highp   vec3      pmvMatrix1; \n\
-    attribute highp   vec3      pmvMatrix2; \n\
-    attribute highp   vec3      pmvMatrix3; \n\
+    in highp   vec2      vertexCoordsArray; \n\
+    in highp   vec3      pmvMatrix1; \n\
+    in highp   vec3      pmvMatrix2; \n\
+    in highp   vec3      pmvMatrix3; \n\
     uniform   mediump vec2      halfViewportSize; \n\
     uniform   highp   vec2      invertedTextureSize; \n\
     uniform   highp   mat3      brushTransform; \n\
-    varying   highp   vec2      patternTexCoords; \n\
+    out   highp   vec2      patternTexCoords; \n\
     void setPosition(void) \n\
     { \n\
         highp mat3 pmvMatrix = mat3(pmvMatrix1, pmvMatrix2, pmvMatrix3); \n\
@@ -139,23 +139,23 @@ static const char* const qopenglslAffinePositionWithPatternBrushVertexShader
 static const char* const qopenglslPatternBrushSrcFragmentShader = "\n\
     uniform           sampler2D brushTexture; \n\
     uniform   lowp    vec4      patternColor; \n\
-    varying   highp   vec2      patternTexCoords;\n\
+    in   highp   vec2      patternTexCoords;\n\
     lowp vec4 srcPixel() \n\
     { \n\
-        return patternColor * (1.0 - texture2D(brushTexture, patternTexCoords).r); \n\
+        return patternColor * (1.0 - texture(brushTexture, patternTexCoords).r); \n\
     }\n";
 
 
 // Linear Gradient Brush
 static const char* const qopenglslPositionWithLinearGradientBrushVertexShader = "\n\
-    attribute highp   vec2      vertexCoordsArray; \n\
-    attribute highp   vec3      pmvMatrix1; \n\
-    attribute highp   vec3      pmvMatrix2; \n\
-    attribute highp   vec3      pmvMatrix3; \n\
+    in highp   vec2      vertexCoordsArray; \n\
+    in highp   vec3      pmvMatrix1; \n\
+    in highp   vec3      pmvMatrix2; \n\
+    in highp   vec3      pmvMatrix3; \n\
     uniform   mediump vec2      halfViewportSize; \n\
     uniform   highp   vec3      linearData; \n\
     uniform   highp   mat3      brushTransform; \n\
-    varying   mediump float     index; \n\
+    out   mediump float     index; \n\
     void setPosition() \n\
     { \n\
         highp mat3 pmvMatrix = mat3(pmvMatrix1, pmvMatrix2, pmvMatrix3); \n\
@@ -173,23 +173,23 @@ static const char* const qopenglslAffinePositionWithLinearGradientBrushVertexSha
 
 static const char* const qopenglslLinearGradientBrushSrcFragmentShader = "\n\
     uniform           sampler2D brushTexture; \n\
-    varying   mediump float     index; \n\
+    in   mediump float     index; \n\
     lowp vec4 srcPixel() \n\
     { \n\
         mediump vec2 val = vec2(index, 0.5); \n\
-        return texture2D(brushTexture, val); \n\
+        return texture(brushTexture, val); \n\
     }\n";
 
 
 // Conical Gradient Brush
 static const char* const qopenglslPositionWithConicalGradientBrushVertexShader = "\n\
-    attribute highp   vec2      vertexCoordsArray; \n\
-    attribute highp   vec3      pmvMatrix1; \n\
-    attribute highp   vec3      pmvMatrix2; \n\
-    attribute highp   vec3      pmvMatrix3; \n\
+    in highp   vec2      vertexCoordsArray; \n\
+    in highp   vec3      pmvMatrix1; \n\
+    in highp   vec3      pmvMatrix2; \n\
+    in highp   vec3      pmvMatrix3; \n\
     uniform   mediump vec2      halfViewportSize; \n\
     uniform   highp   mat3      brushTransform; \n\
-    varying   highp   vec2      A; \n\
+    out   highp   vec2      A; \n\
     void setPosition(void) \n\
     { \n\
         highp mat3 pmvMatrix = mat3(pmvMatrix1, pmvMatrix2, pmvMatrix3); \n\
@@ -209,7 +209,7 @@ static const char* const qopenglslConicalGradientBrushSrcFragmentShader = "\n\
     #define INVERSE_2PI 0.1591549430918953358 \n\
     uniform           sampler2D brushTexture; \n\
     uniform   mediump float     angle; \n\
-    varying   highp   vec2      A; \n\
+    in   highp   vec2      A; \n\
     lowp vec4 srcPixel() \n\
     { \n\
         highp float t; \n\
@@ -217,22 +217,22 @@ static const char* const qopenglslConicalGradientBrushSrcFragmentShader = "\n\
             t = (atan(-A.y + 0.002, A.x) + angle) * INVERSE_2PI; \n\
         else \n\
             t = (atan(-A.y, A.x) + angle) * INVERSE_2PI; \n\
-        return texture2D(brushTexture, vec2(t - floor(t), 0.5)); \n\
+        return texture(brushTexture, vec2(t - floor(t), 0.5)); \n\
     }\n";
 
 
 // Radial Gradient Brush
 static const char* const qopenglslPositionWithRadialGradientBrushVertexShader = "\n\
-    attribute highp   vec2      vertexCoordsArray;\n\
-    attribute highp   vec3      pmvMatrix1; \n\
-    attribute highp   vec3      pmvMatrix2; \n\
-    attribute highp   vec3      pmvMatrix3; \n\
+    in highp   vec2      vertexCoordsArray;\n\
+    in highp   vec3      pmvMatrix1; \n\
+    in highp   vec3      pmvMatrix2; \n\
+    in highp   vec3      pmvMatrix3; \n\
     uniform   mediump vec2      halfViewportSize; \n\
     uniform   highp   mat3      brushTransform; \n\
     uniform   highp   vec2      fmp; \n\
     uniform   mediump vec3      bradius; \n\
-    varying   highp   float     b; \n\
-    varying   highp   vec2      A; \n\
+    out   highp   float     b; \n\
+    out   highp   vec2      A; \n\
     void setPosition(void) \n\
     {\n\
         highp mat3 pmvMatrix = mat3(pmvMatrix1, pmvMatrix2, pmvMatrix3); \n\
@@ -254,19 +254,19 @@ static const char* const qopenglslRadialGradientBrushSrcFragmentShader = "\n\
     uniform   highp   float     fmp2_m_radius2; \n\
     uniform   highp   float     inverse_2_fmp2_m_radius2; \n\
     uniform   highp   float     sqrfr; \n\
-    varying   highp   float     b; \n\
-    varying   highp   vec2      A; \n\
+    in   highp   float     b; \n\
+    in   highp   vec2      A; \n\
     uniform   mediump vec3      bradius; \n\
     lowp vec4 srcPixel() \n\
     { \n\
-        highp float c = sqrfr-dot(A, A); \n\
+        highp float c = sqrfr - dot(A, A); \n\
         highp float det = b*b - 4.0*fmp2_m_radius2*c; \n\
         lowp vec4 result = vec4(0.0); \n\
         if (det >= 0.0) { \n\
             highp float detSqrt = sqrt(det); \n\
             highp float w = max((-b - detSqrt) * inverse_2_fmp2_m_radius2, (-b + detSqrt) * inverse_2_fmp2_m_radius2); \n\
             if (bradius.y + w * bradius.z >= 0.0) \n\
-                result = texture2D(brushTexture, vec2(w, 0.5)); \n\
+                result = texture(brushTexture, vec2(w, 0.5)); \n\
         } \n\
         return result; \n\
     }\n";
@@ -274,14 +274,14 @@ static const char* const qopenglslRadialGradientBrushSrcFragmentShader = "\n\
 
 // Texture Brush
 static const char* const qopenglslPositionWithTextureBrushVertexShader = "\n\
-    attribute highp   vec2      vertexCoordsArray; \n\
-    attribute highp   vec3      pmvMatrix1; \n\
-    attribute highp   vec3      pmvMatrix2; \n\
-    attribute highp   vec3      pmvMatrix3; \n\
+    in highp   vec2      vertexCoordsArray; \n\
+    in highp   vec3      pmvMatrix1; \n\
+    in highp   vec3      pmvMatrix2; \n\
+    in highp   vec3      pmvMatrix3; \n\
     uniform   mediump vec2      halfViewportSize; \n\
     uniform   highp   vec2      invertedTextureSize; \n\
     uniform   highp   mat3      brushTransform; \n\
-    varying   highp   vec2      brushTextureCoords; \n\
+    out   highp   vec2      brushTextureCoords; \n\
     void setPosition(void) \n\
     { \n\
         highp mat3 pmvMatrix = mat3(pmvMatrix1, pmvMatrix2, pmvMatrix3); \n\
@@ -301,27 +301,27 @@ static const char* const qopenglslAffinePositionWithTextureBrushVertexShader
 // we emulate GL_REPEAT by only taking the fractional part of the texture coords.
 // TODO: Special case POT textures which don't need this emulation
 static const char* const qopenglslTextureBrushSrcFragmentShader_ES = "\n\
-    varying highp   vec2      brushTextureCoords; \n\
+    in highp   vec2      brushTextureCoords; \n\
     uniform         sampler2D brushTexture; \n\
     lowp vec4 srcPixel() { \n\
-        return texture2D(brushTexture, fract(brushTextureCoords)); \n\
+        return texture(brushTexture, fract(brushTextureCoords)); \n\
     }\n";
 
 static const char* const qopenglslTextureBrushSrcFragmentShader_desktop = "\n\
-    varying   highp   vec2      brushTextureCoords; \n\
+    in   highp   vec2      brushTextureCoords; \n\
     uniform           sampler2D brushTexture; \n\
     lowp vec4 srcPixel() \n\
     { \n\
-        return texture2D(brushTexture, brushTextureCoords); \n\
+        return texture(brushTexture, brushTextureCoords); \n\
     }\n";
 
 static const char* const qopenglslTextureBrushSrcWithPatternFragmentShader = "\n\
-    varying   highp   vec2      brushTextureCoords; \n\
+    in   highp   vec2      brushTextureCoords; \n\
     uniform   lowp    vec4      patternColor; \n\
     uniform           sampler2D brushTexture; \n\
     lowp vec4 srcPixel() \n\
     { \n\
-        return patternColor * (1.0 - texture2D(brushTexture, brushTextureCoords).r); \n\
+        return patternColor * (1.0 - texture(brushTexture, brushTextureCoords).r); \n\
     }\n";
 
 // Solid Fill Brush
@@ -333,15 +333,15 @@ static const char* const qopenglslSolidBrushSrcFragmentShader = "\n\
     }\n";
 
 static const char* const qopenglslImageSrcFragmentShader = "\n\
-    varying   highp   vec2      textureCoords; \n\
+    in   highp   vec2      textureCoords; \n\
     uniform           sampler2D imageTexture; \n\
     lowp vec4 srcPixel() \n\
-    { \n"
-        "return texture2D(imageTexture, textureCoords); \n"
-    "}\n";
+    { \n\
+        return texture(imageTexture, textureCoords); \n\
+    }\n";
 
 static const char* const qopenglslCustomSrcFragmentShader = "\n\
-    varying   highp   vec2      textureCoords; \n\
+    in   highp   vec2      textureCoords; \n\
     uniform           sampler2D imageTexture; \n\
     lowp vec4 srcPixel() \n\
     { \n\
@@ -349,38 +349,38 @@ static const char* const qopenglslCustomSrcFragmentShader = "\n\
     }\n";
 
 static const char* const qopenglslImageSrcWithPatternFragmentShader = "\n\
-    varying   highp   vec2      textureCoords; \n\
+    in   highp   vec2      textureCoords; \n\
     uniform   lowp    vec4      patternColor; \n\
     uniform           sampler2D imageTexture; \n\
     lowp vec4 srcPixel() \n\
     { \n\
-        return patternColor * (1.0 - texture2D(imageTexture, textureCoords).r); \n\
+        return patternColor * (1.0 - texture(imageTexture, textureCoords).r); \n\
     }\n";
 
 static const char* const qopenglslNonPremultipliedImageSrcFragmentShader = "\n\
-    varying   highp   vec2      textureCoords; \n\
+    in   highp   vec2      textureCoords; \n\
     uniform          sampler2D imageTexture; \n\
     lowp vec4 srcPixel() \n\
     { \n\
-        lowp vec4 sample = texture2D(imageTexture, textureCoords); \n\
+        lowp vec4 sample = texture(imageTexture, textureCoords); \n\
         sample.rgb = sample.rgb * sample.a; \n\
         return sample; \n\
     }\n";
 
 static const char* const qopenglslGrayscaleImageSrcFragmentShader = "\n\
-    varying   highp   vec2      textureCoords; \n\
+    in   highp   vec2      textureCoords; \n\
     uniform          sampler2D imageTexture; \n\
     lowp vec4 srcPixel() \n\
     { \n\
-        return texture2D(imageTexture, textureCoords).rrra; \n\
+        return texture(imageTexture, textureCoords).rrra; \n\
     }\n";
 
 static const char* const qopenglslAlphaImageSrcFragmentShader = "\n\
-    varying   highp   vec2      textureCoords; \n\
+    in   highp   vec2      textureCoords; \n\
     uniform          sampler2D imageTexture; \n\
     lowp vec4 srcPixel() \n\
     { \n\
-        return vec4(0, 0, 0, texture2D(imageTexture, textureCoords).r); \n\
+        return vec4(0, 0, 0, texture(imageTexture, textureCoords).r); \n\
     }\n";
 
 static const char* const qopenglslShockingPinkSrcFragmentShader = "\n\
@@ -389,88 +389,97 @@ static const char* const qopenglslShockingPinkSrcFragmentShader = "\n\
         return vec4(0.98, 0.06, 0.75, 1.0); \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader_ImageArrays = "\n\
-    varying   lowp    float     opacity; \n\
+static const char* const qopenglslMainFragmentShader_ImageArrays = "#version 150 core \n\
+    in   lowp    float     opacity; \n\
     lowp vec4 srcPixel(); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = srcPixel() * opacity; \n\
+        fragColor = srcPixel() * opacity; \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader_CMO = "\n\
+static const char* const qopenglslMainFragmentShader_CMO = "#version 150 core \n\
     uniform   lowp    float     globalOpacity; \n\
     lowp vec4 srcPixel(); \n\
     lowp vec4 applyMask(lowp vec4); \n\
     lowp vec4 compose(lowp vec4); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = applyMask(compose(srcPixel()*globalOpacity))); \n\
+        fragColor = applyMask(compose(srcPixel()*globalOpacity))); \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader_CM = "\n\
+static const char* const qopenglslMainFragmentShader_CM = "#version 150 core \n\
     lowp vec4 srcPixel(); \n\
     lowp vec4 applyMask(lowp vec4); \n\
     lowp vec4 compose(lowp vec4); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = applyMask(compose(srcPixel())); \n\
+        fragColor = applyMask(compose(srcPixel())); \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader_MO = "\n\
+static const char* const qopenglslMainFragmentShader_MO = "#version 150 core \n\
     uniform   lowp    float     globalOpacity; \n\
     lowp vec4 srcPixel(); \n\
     lowp vec4 applyMask(lowp vec4); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = applyMask(srcPixel()*globalOpacity); \n\
+        fragColor = applyMask(srcPixel()*globalOpacity); \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader_M = "\n\
+static const char* const qopenglslMainFragmentShader_M = "#version 150 core \n\
     lowp vec4 srcPixel(); \n\
     lowp vec4 applyMask(lowp vec4); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = applyMask(srcPixel()); \n\
+        fragColor = applyMask(srcPixel()); \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader_CO = "\n\
+static const char* const qopenglslMainFragmentShader_CO = "#version 150 core \n\
     uniform   lowp    float     globalOpacity; \n\
     lowp vec4 srcPixel(); \n\
     lowp vec4 compose(lowp vec4); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = compose(srcPixel()*globalOpacity); \n\
+        fragColor = compose(srcPixel()*globalOpacity); \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader_C = "\n\
+static const char* const qopenglslMainFragmentShader_C = "#version 150 core \n\
     lowp vec4 srcPixel(); \n\
     lowp vec4 compose(lowp vec4); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = compose(srcPixel()); \n\
+        fragColor = compose(srcPixel()); \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader_O = "\n\
+static const char* const qopenglslMainFragmentShader_O = "#version 150 core \n\
     uniform   lowp    float     globalOpacity; \n\
     lowp vec4 srcPixel(); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = srcPixel()*globalOpacity; \n\
+        fragColor = srcPixel()*globalOpacity; \n\
     }\n";
 
-static const char* const qopenglslMainFragmentShader = "\n\
+static const char* const qopenglslMainFragmentShader = "#version 150 core \n\
     lowp vec4 srcPixel(); \n\
+    out vec4 fragColor; \n\
     void main() \n\
     { \n\
-        gl_FragColor = srcPixel(); \n\
+        fragColor = srcPixel(); \n\
     }\n";
 
 static const char* const qopenglslMaskFragmentShader = "\n\
-    varying   highp   vec2      textureCoords;\n\
+    in   highp   vec2      textureCoords;\n\
     uniform           sampler2D maskTexture;\n\
     lowp vec4 applyMask(lowp vec4 src) \n\
     {\n\
-        lowp vec4 mask = texture2D(maskTexture, textureCoords); \n\
+        lowp vec4 mask = texture(maskTexture, textureCoords); \n\
         return src * mask.a; \n\
     }\n";
 
@@ -490,20 +499,20 @@ static const char* const qopenglslMaskFragmentShader = "\n\
 //
 
 static const char* const qopenglslRgbMaskFragmentShaderPass1 = "\n\
-    varying   highp   vec2      textureCoords;\n\
+    in   highp   vec2      textureCoords;\n\
     uniform           sampler2D maskTexture;\n\
     lowp vec4 applyMask(lowp vec4 src) \n\
     { \n\
-        lowp vec4 mask = texture2D(maskTexture, textureCoords); \n\
+        lowp vec4 mask = texture(maskTexture, textureCoords); \n\
         return src.a * mask; \n\
     }\n";
 
 static const char* const qopenglslRgbMaskFragmentShaderPass2 = "\n\
-    varying   highp   vec2      textureCoords;\n\
+    in   highp   vec2      textureCoords;\n\
     uniform           sampler2D maskTexture;\n\
     lowp vec4 applyMask(lowp vec4 src) \n\
     { \n\
-        lowp vec4 mask = texture2D(maskTexture, textureCoords); \n\
+        lowp vec4 mask = texture(maskTexture, textureCoords); \n\
         return src * mask; \n\
     }\n";
 
