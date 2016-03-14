@@ -84,9 +84,9 @@ QString getInstallationPrefix() {
      QString bundlePath = QString::fromLatin1(pathPtr);
 
      //qDebug() << "1" << bundlePath << (bundlePath + QString::fromLatin1("/Contents/MacOS/share"));
-     if (QFile(bundlePath + QString::fromLatin1("/Contents/MacOS/share")).exists()) {
+     if (QFile(bundlePath + QString::fromLatin1("/Contents/share")).exists()) {
          //qDebug() << "running from a deployed bundle";
-         bundlePath += QString::fromLatin1("/Contents/MacOS/");
+         bundlePath += QString::fromLatin1("/Contents/");
      }
      else {
          //qDebug() << "running from make install";
