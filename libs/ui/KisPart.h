@@ -134,6 +134,10 @@ public:
      */
     KisMainWindow *currentMainwindow() const;
 
+    /**
+     * Load actions for currently active main window into KisActionRegistry.
+     */
+    void loadActions();
 
     /**
      * @return the application-wide KisIdleWatcher.
@@ -152,15 +156,6 @@ public Q_SLOTS:
      * @param url the file to load
      */
     void openExistingFile(const QUrl &url);
-
-    /**
-     * @brief configureShortcuts opens the shortcut configuration dialog.
-     * @param parent the parent widget for the dialog
-     *
-     * After the user closes the dialog, all actioncollections will be updated
-     * with the new shortcuts.
-     */
-    void configureShortcuts();
 
 protected Q_SLOTS:
 

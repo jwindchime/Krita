@@ -73,7 +73,7 @@
 #include "kis_idle_watcher.h"
 #include "kis_image.h"
 #include "KisImportExportManager.h"
-#include "KisDocumentEntry.h"
+#include "KisDocument.h"
 #include "KoToolManager.h"
 
 #include "kis_color_manager.h"
@@ -118,13 +118,13 @@ public:
 
 // Basically, we are going to insert the current UI/MainWindow ActionCollection
 // into the KisActionRegistry.
-void KisPart::Private::loadActions()
+void KisPart::loadActions()
 {
-    actionCollection = part->currentMainwindow()->viewManager()->actionCollection();
+    d->actionCollection = currentMainwindow()->viewManager()->actionCollection();
 
     KisActionRegistry * actionRegistry = KisActionRegistry::instance();
 
-    Q_FOREACH (auto action, actionCollection->actions()) {
+    Q_FOREACH (auto action, d->actionCollection->actions()) {
         auto name = action->objectName();
         actionRegistry->addAction(action->objectName(), action);
     }
@@ -415,14 +415,6 @@ void KisPart::openExistingFile(const QUrl &url)
     qApp->restoreOverrideCursor();
 }
 
-void KisPart::configureShortcuts()
-{
-    d->loadActions();
-
-    auto actionRegistry = KisActionRegistry::instance();
-    actionRegistry->configureShortcuts();
-}
-
 void KisPart::updateShortcuts()
 {
     // Update any non-UI actionCollections.  That includes:
@@ -535,7 +527,7 @@ void KisPart::showStartUpWidget(KisMainWindow *mainWindow, bool alwaysShow)
     }
     const QStringList mimeFilter = KisImportExportManager::mimeFilter(KIS_MIME_TYPE,
                                                                       KisImportExportManager::Import,
-                                                                      KisDocumentEntry::extraNativeMimeTypes());
+                                                                      KisDocument::extraNativeMimeTypes());
 
     d->startupWidget = new KisOpenPane(0, mimeFilter, templatesResourcePath());
     d->startupWidget->setWindowModality(Qt::WindowModal);

@@ -10,6 +10,11 @@ add_subdirectory( data )
 add_subdirectory( integration )
 add_subdirectory( pics/app )
 
+if (WIN32 AND USE_BREAKPAD)
+    add_subdirectory( crashreporter )
+    include_directories(${CMAKE_SOURCE_DIR}/3rdparty/google-breakpad/src)
+endif ()
+
 set(krita_SRCS main.cc)
 
 set(ICON_SRCS
@@ -21,11 +26,13 @@ set(ICON_SRCS
      "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/512-apps-calligrakrita.png"
      "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/1024-apps-calligrakrita.png"
 )
-if (NOT APPLE)
-    set(ICON_SRCS ${ICON_SRCS}
-        "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/22-apps-calligrakrita.png"
-        "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/64-apps-calligrakrita.png"
-    )
+
+if(WIN32 AND USE_BREAKPAD)
+    set(krita_SRCS ${krita_SRCS} kis_crash_handler.cpp)
+    find_library(BREAKPAD_LIBS breakpad)
+    if(NOT BREAKPAD_LIBS)
+        message(FATAL_ERROR "Couldn't find Google Breakpad library!")
+    endif()
 endif()
 
 ecm_add_app_icon(krita_SRCS ICONS ${ICON_SRCS})
@@ -66,6 +73,7 @@ target_link_libraries(krita
                       Qt5::Network
                       Qt5::PrintSupport
                       Qt5::Svg
+                      ${BREAKPAD_LIBS}
                       Qt5::Concurrent)
 if(HAVE_KCRASH)
     target_link_libraries(krita

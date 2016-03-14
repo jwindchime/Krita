@@ -226,6 +226,12 @@ target_link_libraries(KisMultinodePropertyTest kritaimage kritaui Qt5::Test)
 
 ########### next target ###############
 
+set(kis_grid_config_test_SRCS kis_grid_config_test.cpp)
+kde4_add_unit_test(KisGridConfigTest TESTNAME krita-image-BaseNodeTest ${kis_grid_config_test_SRCS})
+target_link_libraries(KisGridConfigTest kritaui Qt5::Test)
+
+########### next target ###############
+
 set(kis_animation_exporter_test_SRCS kis_animation_exporter_test.cpp )
 kde4_add_unit_test(KisAnimationExporterTest TESTNAME kritaui-animation_exporter_test ${kis_animation_exporter_test_SRCS})
 target_link_libraries(KisAnimationExporterTest kritaui kritaimage ${QT_QTTEST_LIBRARY})

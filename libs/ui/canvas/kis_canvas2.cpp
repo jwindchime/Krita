@@ -66,6 +66,7 @@
 #include "kis_exposure_gamma_correction_interface.h"
 #include "KisView.h"
 #include "kis_canvas_controller.h"
+#include "kis_grid_config.h"
 
 #include "kis_animation_player.h"
 #include "kis_animation_frame_cache.h"
@@ -137,8 +138,11 @@ KisCanvas2::KisCanvas2(KisCoordinatesConverter *coordConverter, KoCanvasResource
      * light.
      */
     m_d->bootsrapLodBlocked = true;
-    connect(view->mainWindow(), SIGNAL(guiLoadingFinished()),
-            SLOT(bootstrapFinished()));
+    connect(view->mainWindow(), SIGNAL(guiLoadingFinished()), SLOT(bootstrapFinished()));
+
+    m_d->updateSignalCompressor.setDelay(10);
+    m_d->updateSignalCompressor.setMode(KisSignalCompressor::FIRST_ACTIVE);
+
 
 }
 
@@ -181,8 +185,6 @@ void KisCanvas2::setup()
             globalShapeManager()->selection(), SIGNAL(currentLayerChanged(const KoShapeLayer*)));
 
 
-    m_d->updateSignalCompressor.setDelay(10);
-    m_d->updateSignalCompressor.setMode(KisSignalCompressor::FIRST_ACTIVE);
     connect(&m_d->updateSignalCompressor, SIGNAL(timeout()), SLOT(slotDoCanvasUpdate()));
 }
 
@@ -241,20 +243,23 @@ bool KisCanvas2::canvasIsOpenGL()
     return m_d->currentCanvasIsOpenGL;
 }
 
-void KisCanvas2::gridSize(qreal *horizontal, qreal *vertical) const
+void KisCanvas2::gridSize(QPointF *offset, QSizeF *spacing) const
 {
-    Q_ASSERT(horizontal);
-    Q_ASSERT(vertical);
     QTransform transform = coordinatesConverter()->imageToDocumentTransform();
 
-    QPointF size = transform.map(QPointF(m_d->view->document()->gridData().gridX(), m_d->view->document()->gridData().gridY()));
-    *horizontal = size.x();
-    *vertical = size.y();
+    const QPoint intSpacing = m_d->view->document()->gridConfig().spacing();
+    const QPoint intOffset = m_d->view->document()->gridConfig().offset();
+
+    QPointF size = transform.map(QPointF(intSpacing));
+    spacing->rwidth() = size.x();
+    spacing->rheight() = size.y();
+
+    *offset = transform.map(QPointF(intOffset));
 }
 
 bool KisCanvas2::snapToGrid() const
 {
-    return m_d->view->document()->gridData().snapToGrid();
+    return m_d->view->document()->gridConfig().snapToGrid();
 }
 
 qreal KisCanvas2::rotationAngle() const
@@ -861,11 +866,6 @@ void KisCanvas2::setLodAllowedInCanvas(bool value)
 bool KisCanvas2::lodAllowedInCanvas() const
 {
     return m_d->lodAllowedInCanvas;
-}
-
-KoGuidesData *KisCanvas2::guidesData()
-{
-    return &m_d->view->document()->guidesData();
 }
 
 void KisCanvas2::slotShowPopupPalette(const QPoint &p)

@@ -38,7 +38,6 @@
 #include "KoIntegerMaths.h"
 #include <KisDocument.h>
 #include <KisMainWindow.h>
-#include <KisDocumentEntry.h>
 #include <KoViewConverter.h>
 #include <KoSelection.h>
 #include <KoShapeManager.h>
@@ -156,7 +155,7 @@ void KisSelectionManager::setup(KisActionManager* actionManager)
     m_invert->setOperationID("invertselection");
 
     actionManager->registerOperation(new KisInvertSelectionOperaton);
-    
+
     m_copyToNewLayer = actionManager->createAction("copy_selection_to_new_layer");
     connect(m_copyToNewLayer, SIGNAL(triggered()), this, SLOT(copySelectionToNewLayer()));
 

@@ -71,6 +71,8 @@ static bool isMouseEventType(QEvent::Type t)
 
 bool KisInputManager::Private::EventEater::eventFilter(QObject* target, QEvent* event )
 {
+    Q_UNUSED(target)
+
     auto debugEvent = [&]() {
         if (KisTabletDebugger::instance()->debugEnabled()) {
             QString pre = QString("[BLOCKED]");
@@ -111,13 +113,13 @@ void KisInputManager::Private::EventEater::deactivate()
 
 void KisInputManager::Private::EventEater::eatOneMousePress()
 {
-#if defined(Q_OS_WIN)
+// #if defined(Q_OS_WIN)
     // Enable on other platforms if getting full-pressure splotches
     peckish = true;
-#endif
+// #endif
 }
 
-bool KisInputManager::Private::ignoreQtCursorEvents()
+bool KisInputManager::Private::ignoringQtCursorEvents()
 {
     return eventEater.hungry;
 }

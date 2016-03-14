@@ -28,9 +28,6 @@
 #include <klocalizedstring.h>
 
 #include <KoPageLayout.h>
-#include "KoGridData.h"
-#include "KoGuidesData.h"
-#include <KoXmlReader.h>
 #include <KoDocumentBase.h>
 #include <kundo2stack.h>
 
@@ -59,6 +56,9 @@ class KoDocumentInfoDlg;
 class KisUndoStore;
 class KisPaintingAssistant;
 class KisPart;
+class KisGridConfig;
+class KisGuidesConfig;
+class QDomDocument;
 
 class KisPart;
 
@@ -149,23 +149,14 @@ public:
      * delivers.
      * This comes from the X-KDE-NativeMimeType key in the .desktop file.
      */
-    QByteArray nativeFormatMimeType() const { return KIS_MIME_TYPE; }
-
-    /**
-     * Returns the OASIS OpenDocument mimetype of the document, if supported
-     * This comes from the X-KDE-NativeOasisMimeType key in the
-     * desktop file
-     *
-     * @return the oasis mimetype or, if it hasn't one, the nativeformatmimetype.
-     */
-    virtual QByteArray nativeOasisMimeType() const  { return ""; }
+    static QByteArray nativeFormatMimeType() { return KIS_MIME_TYPE; }
 
     /// Checks whether a given mimetype can be handled natively.
     bool isNativeFormat(const QByteArray& mimetype) const;
 
     /// Returns a list of the mimetypes considered "native", i.e. which can
     /// be saved by KisDocument without a filter, in *addition* to the main one
-    QStringList extraNativeMimeTypes() const { return QStringList() << KIS_MIME_TYPE; }
+    static QStringList extraNativeMimeTypes() { return QStringList() << KIS_MIME_TYPE; }
 
 
     /// Enum values used by specialOutputFlag - note that it's a bitfield for supportedSpecialFormats
@@ -226,14 +217,14 @@ public:
 
 
     /**
-     * @return true if saving/exporting should inhibit the option dialog
+     * @return true if file operations should inhibit the option dialog
      */
-    bool saveInBatchMode() const;
+    bool fileBatchMode() const;
 
     /**
-     * @param batchMode if true, do not show the option dialog when saving or exporting.
+     * @param batchMode if true, do not show the option dialog for file operations.
      */
-    void setSaveInBatchMode(const bool batchMode);
+    void setFileBatchMode(const bool batchMode);
 
     /**
      * Sets the error message to be shown to the user (use i18n()!)
@@ -528,11 +519,12 @@ public:
      */
     bool loadNativeFormatFromByteArray(QByteArray &data);
 
-    /// return the grid data for this document.
-    KoGridData &gridData();
+    KisGridConfig gridConfig() const;
+    void setGridConfig(const KisGridConfig &config);
 
     /// returns the guides data for this document.
-    KoGuidesData &guidesData();
+    const KisGuidesConfig& guidesConfig() const;
+    void setGuidesConfig(const KisGuidesConfig &data);
 
     void clearUndoHistory();
 
@@ -554,6 +546,7 @@ public:
      * Returns the global undo stack
      */
     KUndo2Stack *undoStack();
+
 
 public Q_SLOTS:
 
@@ -591,6 +584,12 @@ Q_SIGNALS:
     void sigProgress(int value);
 
     /**
+     * Progress cancel button pressed
+     * This is emitted by KisDocument
+     */
+    void sigProgressCanceled();
+
+    /**
      * Emitted e.g. at the beginning of a save operation
      * This is emitted by KisDocument and used by KisView to display a statusbar message
      */
@@ -612,6 +611,8 @@ Q_SIGNALS:
     void sigLoadingFinished();
 
     void sigSavingFinished();
+
+    void sigGuidesConfigChanged(const KisGuidesConfig &config);
 
 private:
 
@@ -750,6 +751,26 @@ public:
      * Makes an otherwise empty document ready for import/export
      */
     void prepareForImport();
+
+    /**
+     * Adds progressproxy for file operations
+     */
+    void setFileProgressProxy();
+
+    /**
+     * Clears progressproxy for file operations
+     */
+    void clearFileProgressProxy();
+
+    /**
+     * Adds progressupdater for file operations
+     */
+    void setFileProgressUpdater(const QString &text);
+
+    /**
+     * Clears progressupdater for file operations
+     */
+    void clearFileProgressUpdater();
 
     /**
      * Set the current image to the specified image and turn undo on.
