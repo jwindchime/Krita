@@ -58,7 +58,7 @@
 #include <QDomDocument>
 #include <QDomElement>
 #include <QGlobalStatic>
-#include <QMimeDatabase>
+#include <KisMimeDatabase.h>
 
 #include "KisView.h"
 #include "KisDocument.h"
@@ -95,7 +95,6 @@ public:
     ~Private()
     {
         delete canvasItem;
-        delete actionCollection;
     }
 
     KisPart *part;
@@ -441,8 +440,7 @@ void KisPart::openTemplate(const QUrl &url)
     document->undoStack()->clear();
 
     if (ok) {
-        QMimeDatabase db;
-        QString mimeType = db.mimeTypeForFile(url.path(), QMimeDatabase::MatchExtension).name();
+        QString mimeType = KisMimeDatabase::mimeTypeForFile(url.toLocalFile());
         // in case this is a open document template remove the -template from the end
         mimeType.remove( QRegExp( "-template$" ) );
         document->setMimeTypeAfterLoading(mimeType);
@@ -503,5 +501,3 @@ KisInputManager* KisPart::currentInputManager()
     return instance()->currentMainwindow()->viewManager()->inputManager();
 }
 
-#include <QMimeDatabase>
-#include <QMimeType>

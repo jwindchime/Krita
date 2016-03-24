@@ -26,6 +26,7 @@
 #include <QVector>
 #include <QIODevice>
 #include <QStatusBar>
+#include <QFileInfo>
 
 #include <KisPart.h>
 #include <KisView.h>
@@ -56,7 +57,7 @@ CSVLoader::~CSVLoader()
 {
 }
 
-KisImageBuilder_Result CSVLoader::decode(const QUrl &uri, const QString &filename)
+KisImageBuilder_Result CSVLoader::decode(const QString &filename)
 {
     QString     field;
     int         idx;
@@ -79,7 +80,7 @@ KisImageBuilder_Result CSVLoader::decode(const QUrl &uri, const QString &filenam
     QVector<CSVLayerRecord*> layers;
 
     // open the csv file
-    QFile f(uri.toLocalFile());
+    QFile f(filename);
     if (!f.exists())
         return KisImageBuilder_RESULT_NOT_EXIST;
 
@@ -402,7 +403,7 @@ KisImageBuilder_Result CSVLoader::setLayer(CSVLayerRecord* layer, KisDocument *i
         layer->channel = qobject_cast<KisRasterKeyframeChannel*>
             (paintLayer->getKeyframeChannel(KisKeyframeChannel::Content.id()));
     }
-    layer->channel->addKeyframe(layer->frame);
+
 
     if (!layer->last.isEmpty()) {
         //png image
@@ -413,6 +414,10 @@ KisImageBuilder_Result CSVLoader::setLayer(CSVLayerRecord* layer, KisDocument *i
                                     KisDocument::OPEN_URL_FLAG_DO_NOT_ADD_TO_RECENT_FILES);
         if (result)
             layer->channel->importFrame(layer->frame, importDoc->image()->projection(), NULL);
+
+    } else {
+        //blank
+        layer->channel->addKeyframe(layer->frame);
     }
     return (result) ? KisImageBuilder_RESULT_OK : KisImageBuilder_RESULT_FAILURE;
 }
@@ -435,15 +440,9 @@ KisImageBuilder_Result CSVLoader::createNewImage(int width, int height, float ra
     return KisImageBuilder_RESULT_OK;
 }
 
-KisImageBuilder_Result CSVLoader::buildAnimation(const QUrl &uri,const QString &filename)
+KisImageBuilder_Result CSVLoader::buildAnimation(QString &filename)
 {
-    if (uri.isEmpty())
-        return KisImageBuilder_RESULT_NO_URI;
-
-    if (!uri.isLocalFile())
-        return KisImageBuilder_RESULT_NOT_EXIST;
-
-    return decode(uri, filename);
+    return decode(filename);
 }
 
 KisImageWSP CSVLoader::image()

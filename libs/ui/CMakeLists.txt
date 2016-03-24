@@ -318,7 +318,6 @@ set(kritaui_LIB_SRCS
     KisFilterEntry.cpp
     KisFilterGraph.cpp
     KisImportExportManager.cpp
-    KisImportExportManager_p.cpp
     KisFilterVertex.cpp
     KisMainWindow.cpp
     KisOpenPane.cpp

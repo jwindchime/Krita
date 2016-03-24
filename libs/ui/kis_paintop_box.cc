@@ -30,6 +30,7 @@
 #include <QToolButton>
 #include <QPixmap>
 #include <QWidgetAction>
+#include <QApplication>
 
 #include <kis_debug.h>
 
@@ -433,6 +434,10 @@ KisPaintopBox::~KisPaintopBox()
     m_presetsPopup->setPaintOpSettingsWidget(0);
     qDeleteAll(m_paintopOptionWidgets);
     delete m_favoriteResourceManager;
+
+    for (int i = 0; i < 3; ++i) {
+        delete m_sliderChooser[i];
+    }
 }
 
 void KisPaintopBox::restoreResource(KoResource* resource)
@@ -1060,7 +1065,7 @@ void KisPaintopBox::slotToggleAlphaLockMode(bool checked)
 
 void KisPaintopBox::toggleHighlightedButton(QToolButton* m_tool)
 {
-    QPalette p = palette();
+    QPalette p = qApp->palette();
     if (m_tool->isChecked()) {
         QPalette palette_highlight(p);
         palette_highlight.setColor(QPalette::Button, p.color(QPalette::Highlight));

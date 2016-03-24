@@ -36,8 +36,7 @@
 #include <QProcessEnvironment>
 #include <QDir>
 #include <QDesktopWidget>
-#include <QMimeDatabase>
-#include <QMimeType>
+#include <KisMimeDatabase.h>
 #include <QTimer>
 #include <QStyle>
 #include <QStyleFactory>
@@ -357,7 +356,7 @@ bool KisApplication::start(const KisApplicationArguments &args)
     // TODO: fix print & exportAsPdf to work without mainwindow shown
     const bool showmainWindow = !exportAs; // would be !batchRun;
 
-    const bool showSplashScreen = !batchRun && !qgetenv("NOSPLASH").isEmpty();
+    const bool showSplashScreen = !batchRun && qgetenv("NOSPLASH").isEmpty();
     if (showSplashScreen) {
         d->splashScreen->show();
         d->splashScreen->repaint();
@@ -432,22 +431,18 @@ bool KisApplication::start(const KisApplicationArguments &args)
             else {
 
                 if (exportAs) {
-                    QMimeType outputMimetype;
-                    QMimeDatabase db;
-                    outputMimetype = db.mimeTypeForFile(exportFileName);
-                    if (outputMimetype.isDefault()) {
+                    QString outputMimetype = KisMimeDatabase::mimeTypeForFile(exportFileName);
+                    if (outputMimetype == "application/octetstream") {
                         dbgKrita << i18n("Mimetype not found, try using the -mimetype option") << endl;
                         return 1;
                     }
 
                     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-                    QString outputFormat = outputMimetype.name();
-
                     KisImportExportFilter::ConversionStatus status = KisImportExportFilter::OK;
                     KisImportExportManager manager(fileName);
                     manager.setBatchMode(true);
-                    QByteArray mime(outputFormat.toLatin1());
+                    QByteArray mime(outputMimetype.toLatin1());
                     status = manager.exportDocument(exportFileName, mime);
 
                     if (status != KisImportExportFilter::OK) {
@@ -579,6 +574,10 @@ void KisApplication::checkAutosaveFiles()
 
     // Allow the user to make their selection
     if (autoSaveFiles.size() > 0) {
+        if (d->splashScreen) {
+            // hide the splashscreen to see the dialog
+            d->splashScreen->hide();
+        }
         dlg = new KisAutoSaveRecoveryDialog(autoSaveFiles, activeWindow());
         connect(dlg, SIGNAL(finished(int)), this, SLOT(onAutoSaveFinished(int)));
         dlg->exec();
