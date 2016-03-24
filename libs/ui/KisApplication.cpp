@@ -329,12 +329,10 @@ bool KisApplication::start(const KisApplicationArguments &args)
     appdir.cdUp();
 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    // If there's no kdehome, set it and restart the process.
     if (!env.contains("XDG_DATA_DIRS")) {
         qDebug() << "Setting XDG_DATA_DIRS" << KoResourcePaths::getApplicationRoot() + "/share";
         qputenv("XDG_DATA_DIRS", QFile::encodeName(KoResourcePaths::getApplicationRoot() + "/share"));
     }
-
     qputenv("PATH", QFile::encodeName(appdir.absolutePath() + "/bin" + ";"
                                       + appdir.absolutePath() + "/lib" + ";"
                                       + appdir.absolutePath() + "/lib/kde4" + ";"
