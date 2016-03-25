@@ -720,6 +720,7 @@ void KisPaintopBox::slotCanvasResourceChanged(int /*key*/, const QVariant& /*v*/
             m_eraseModeButton->defaultAction()->setChecked(compositeOp == COMPOSITE_ERASE);
             m_eraseModeButton->blockSignals(false);
             m_eraseModeButton->defaultAction()->blockSignals(false);
+            toggleHighlightedButton(m_eraseModeButton);
         }
         sender()->blockSignals(false);
     }
@@ -1047,7 +1048,7 @@ void KisPaintopBox::slotSwitchToPreviousPreset()
 void KisPaintopBox::slotUnsetEraseMode()
 {
     if (m_currCompositeOpID == COMPOSITE_ERASE) {
-        updateCompositeOp(m_prevCompositeOpID);
+        slotToggleEraseMode(false);
     }
 }
 
