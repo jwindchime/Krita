@@ -96,7 +96,7 @@ public:
     int cursorShaderModelViewProjectionUniform;
 
     KisDisplayFilter* displayFilter;
-    KisTextureTile::FilterMode filterMode;
+    KisOpenGL::FilterMode filterMode;
 
     GLsync glSyncObject{0};
 
@@ -632,22 +632,22 @@ void KisOpenGLCanvas2::drawImage()
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 switch(d->filterMode) {
-                case KisTextureTile::NearestFilterMode:
+                case KisOpenGL::NearestFilterMode:
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
                     dbgOpenGL << "texparameteri nearest" << glGetError();
 
                     break;
-                case KisTextureTile::BilinearFilterMode:
+                case KisOpenGL::BilinearFilterMode:
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
                     dbgOpenGL << "texparameteri bilinear" << glGetError();
 
                     break;
-                case KisTextureTile::TrilinearFilterMode:
+                case KisOpenGL::TrilinearFilterMode:
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
                     break;
-                case KisTextureTile::HighQualityFiltering:
+                case KisOpenGL::HighQualityFiltering:
                     if (SCALE_LESS_THAN(scaleX, scaleY, 0.5)) {
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
                     } else {
@@ -716,7 +716,7 @@ QByteArray KisOpenGLCanvas2::buildFragmentShader()
     QByteArray shaderText;
 
     bool haveDisplayFilter = d->displayFilter && !d->displayFilter->program().isEmpty();
-    bool useHiQualityFiltering = d->filterMode == KisTextureTile::HighQualityFiltering;
+    bool useHiQualityFiltering = d->filterMode == KisOpenGL::HighQualityFiltering;
 
     QString filename = "highq_downscale.frag";
     // FIXME is this necessary?
@@ -792,7 +792,7 @@ void KisOpenGLCanvas2::slotConfigChanged()
 
     d->openGLImageTextures->generateCheckerTexture(createCheckersImage(cfg.checkSize()));
     d->openGLImageTextures->updateConfig(cfg.useOpenGLTextureBuffer(), cfg.numMipmapLevels());
-    d->filterMode = (KisTextureTile::FilterMode) cfg.openGLFilteringMode();
+    d->filterMode = (KisOpenGL::FilterMode) cfg.openGLFilteringMode();
 
     notifyConfigChanged();
 }

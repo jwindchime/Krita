@@ -238,9 +238,14 @@ void KisCanvas2::setCanvasWidget(QWidget * widget)
     }
 }
 
-bool KisCanvas2::canvasIsOpenGL()
+bool KisCanvas2::canvasIsOpenGL() const
 {
     return m_d->currentCanvasIsOpenGL;
+}
+
+KisOpenGL::FilterMode KisCanvas2::openGLFilterMode() const
+{
+    return KisOpenGL::FilterMode(m_d->openGLFilterMode);
 }
 
 void KisCanvas2::gridSize(QPointF *offset, QSizeF *spacing) const
@@ -848,8 +853,10 @@ void KisCanvas2::bootstrapFinished()
 void KisCanvas2::setLodAllowedInCanvas(bool value)
 {
     m_d->lodAllowedInCanvas =
-            value &&
-            m_d->currentCanvasIsOpenGL;
+        value &&
+        m_d->currentCanvasIsOpenGL &&
+        (m_d->openGLFilterMode == KisOpenGL::TrilinearFilterMode ||
+         m_d->openGLFilterMode == KisOpenGL::HighQualityFiltering);
 
     KisImageSP image = this->image();
 

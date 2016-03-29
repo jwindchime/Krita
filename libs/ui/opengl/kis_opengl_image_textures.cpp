@@ -189,7 +189,7 @@ void KisOpenGLImageTextures::createImageTextureTiles()
     QByteArray emptyTileData((m_texturesInfo.width) * (m_texturesInfo.height) * pixelSize, 0);
 
     KisConfig config;
-    KisTextureTile::FilterMode mode = (KisTextureTile::FilterMode)config.openGLFilteringMode();
+    KisOpenGL::FilterMode mode = (KisOpenGL::FilterMode)config.openGLFilteringMode();
 
     QOpenGLContext *ctx = QOpenGLContext::currentContext();
     if (ctx) {

@@ -32,6 +32,8 @@
 #include <kis_types.h>
 #include <KoPointerEvent.h>
 
+#include "opengl/kis_opengl.h"
+
 #include "kis_ui_types.h"
 #include "kis_coordinates_converter.h"
 
@@ -81,7 +83,9 @@ public:
 
 public: // KoCanvasBase implementation
 
-    bool canvasIsOpenGL();
+    bool canvasIsOpenGL() const;
+
+    KisOpenGL::FilterMode openGLFilterMode() const;
 
     void gridSize(QPointF *offset, QSizeF *spacing) const;
 
