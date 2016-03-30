@@ -84,7 +84,6 @@ private:
     QVector<float> m_lut3d;
     QString m_lut3dcacheid;
     QString m_shadercacheid;
-
 };
 
 #endif // OCIO_DISPLAY_FILTER_H

@@ -71,7 +71,6 @@
 #include "kis_animation_player.h"
 #include "kis_animation_frame_cache.h"
 #include "opengl/kis_opengl_canvas2.h"
-
 #include "opengl/kis_opengl.h"
 #include "kis_fps_decoration.h"
 
@@ -157,7 +156,6 @@ void KisCanvas2::setup()
 
     setLodAllowedInCanvas(m_d->lodAllowedInCanvas);
     m_d->animationPlayer = new KisAnimationPlayer(this);
-
     connect(m_d->view->canvasController()->proxyObject, SIGNAL(moveDocumentOffset(QPoint)), SLOT(documentOffsetMoved(QPoint)));
     connect(KisConfigNotifier::instance(), SIGNAL(configChanged()), SLOT(slotConfigChanged()));
 
@@ -427,17 +425,22 @@ void KisCanvas2::createCanvas(bool useOpenGL)
     m_d->displayColorConverter.setMonitorProfile(profile);
 
     if (useOpenGL) {
-        createOpenGLCanvas();
-        if (cfg.canvasState() == "OPENGL_FAILED") {
-            // Creating the opengl canvas failed, fall back
-            warnKrita << "OpenGL Canvas initialization returned OPENGL_FAILED. Falling back to QPainter.";
+        if (KisOpenGL::hasOpenGL()) {
+            createOpenGLCanvas();
+            if (cfg.canvasState() == "OPENGL_FAILED") {
+                // Creating the opengl canvas failed, fall back
+                warnKrita << "OpenGL Canvas initialization returned OPENGL_FAILED. Falling back to QPainter.";
+                createQPainterCanvas();
+            }
+        } else {
+            warnKrita << "Tried to create OpenGL widget when system doesn't have OpenGL\n";
             createQPainterCanvas();
         }
-
-    }
+    } 
     else {
         createQPainterCanvas();
     }
+    
     if (m_d->popupPalette) {
         m_d->popupPalette->setParent(m_d->canvasWidget->widget());
     }
@@ -490,7 +493,6 @@ void KisCanvas2::resetCanvas(bool useOpenGL)
         connectCurrentCanvas();
         notifyZoomChanged();
     }
-
     updateCanvasWidgetImpl();
 }
 
@@ -857,7 +859,6 @@ void KisCanvas2::setLodAllowedInCanvas(bool value)
         m_d->currentCanvasIsOpenGL &&
         (m_d->openGLFilterMode == KisOpenGL::TrilinearFilterMode ||
          m_d->openGLFilterMode == KisOpenGL::HighQualityFiltering);
-
     KisImageSP image = this->image();
 
     if (m_d->effectiveLodAllowedInCanvas() != !image->levelOfDetailBlocked()) {

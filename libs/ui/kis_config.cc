@@ -1185,6 +1185,7 @@ bool KisConfig::useOcio(bool defaultValue) const
 #ifdef HAVE_OCIO
     return (defaultValue ? false : m_cfg.readEntry("Krita/Ocio/UseOcio", false));
 #else
+    Q_UNUSED(defaultValue);
     return false;
 #endif
 }

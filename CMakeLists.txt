@@ -455,7 +455,6 @@ else()
     message(FATAL_ERROR  "Did NOT find QtGui OpenGL support. Check your Qt configuration. You cannot build Krita without Qt OpenGL support.")
 endif()
 
-
 ##
 ## Test for eigen3
 ##

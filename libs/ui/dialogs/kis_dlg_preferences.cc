@@ -685,18 +685,24 @@ DisplaySettingsTab::DisplaySettingsTab(QWidget *parent, const char *name)
 {
     KisConfig cfg;
 
-    grpOpenGL->setEnabled(true);
-    grpOpenGL->setChecked(cfg.useOpenGL());
-    cmbOpenGLVersion->setEnabled(true);
-    cmbOpenGLVersion->setCurrentIndex(cfg.openGLVersion());
-    chkUseTextureBuffer->setEnabled(cfg.useOpenGL());
-    chkUseTextureBuffer->setChecked(cfg.useOpenGLTextureBuffer());
-    chkDisableVsync->setVisible(cfg.showAdvancedOpenGLSettings());
-    chkDisableVsync->setEnabled(cfg.useOpenGL());
-    chkDisableVsync->setChecked(cfg.disableVSync());
-    cmbFilterMode->setEnabled(cfg.useOpenGL());
-    cmbFilterMode->setCurrentIndex(cfg.openGLFilteringMode());
-
+    if (!KisOpenGL::hasOpenGL()) {
+        grpOpenGL->setEnabled(false);
+        grpOpenGL->setChecked(false);
+        chkUseTextureBuffer->setEnabled(false);
+        chkDisableVsync->setEnabled(false);
+        cmbFilterMode->setEnabled(false);
+    }
+     else {
+        grpOpenGL->setEnabled(true);
+        grpOpenGL->setChecked(cfg.useOpenGL());
+        chkUseTextureBuffer->setEnabled(cfg.useOpenGL());
+        chkUseTextureBuffer->setChecked(cfg.useOpenGLTextureBuffer());
+        chkDisableVsync->setVisible(cfg.showAdvancedOpenGLSettings());
+        chkDisableVsync->setEnabled(cfg.useOpenGL());
+        chkDisableVsync->setChecked(cfg.disableVSync());
+        cmbFilterMode->setEnabled(cfg.useOpenGL());
+        cmbFilterMode->setCurrentIndex(cfg.openGLFilteringMode());
+    }
     if (qApp->applicationName() == "kritasketch" || qApp->applicationName() == "kritagemini") {
        grpOpenGL->setVisible(false);
        grpOpenGL->setMaximumHeight(0);
@@ -728,17 +734,23 @@ DisplaySettingsTab::DisplaySettingsTab(QWidget *parent, const char *name)
 void DisplaySettingsTab::setDefault()
 {
     KisConfig cfg;
-    grpOpenGL->setEnabled(true);
-    grpOpenGL->setChecked(cfg.useOpenGL(true));
-    cmbOpenGLVersion->setEnabled(true);
-    cmbOpenGLVersion->setCurrentIndex(cfg.openGLVersion(true));
-    chkUseTextureBuffer->setChecked(cfg.useOpenGLTextureBuffer(true));
-    chkUseTextureBuffer->setEnabled(true);
-    chkDisableVsync->setEnabled(true);
-    chkDisableVsync->setChecked(cfg.disableVSync(true));
-    cmbFilterMode->setEnabled(true);
-    cmbFilterMode->setCurrentIndex(cfg.openGLFilteringMode(true));
-
+    if (!KisOpenGL::hasOpenGL()) {
+        grpOpenGL->setEnabled(false);
+        grpOpenGL->setChecked(false);
+        chkUseTextureBuffer->setEnabled(false);
+        chkDisableVsync->setEnabled(false);
+        cmbFilterMode->setEnabled(false);
+    }
+    else {
+        grpOpenGL->setEnabled(true);
+        grpOpenGL->setChecked(cfg.useOpenGL(true));
+        chkUseTextureBuffer->setChecked(cfg.useOpenGLTextureBuffer(true));
+        chkUseTextureBuffer->setEnabled(true);
+        chkDisableVsync->setEnabled(true);
+        chkDisableVsync->setChecked(cfg.disableVSync(true));
+        cmbFilterMode->setEnabled(true);
+        cmbFilterMode->setCurrentIndex(cfg.openGLFilteringMode(true));
+    }
 
     chkMoving->setChecked(cfg.scrollCheckers(true));
     intCheckSize->setValue(cfg.checkSize(true));

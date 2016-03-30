@@ -67,8 +67,7 @@ void KisOpenGL::initialize()
 
 }
 
-int KisOpenGL::initializeContext(QOpenGLContext* ctx)
-{
+int KisOpenGL::initializeContext(QOpenGLContext* ctx) {
     KisConfig cfg;
     dbgOpenGL << "OpenGL: Opening new context";
 

@@ -138,13 +138,10 @@
 #include "KisView.h"
 #include "KisViewManager.h"
 #include "thememanager.h"
-
-
-#ifdef HAVE_OPENGL
 #include "kis_animation_importer.h"
 #include "dialogs/kis_dlg_import_image_sequence.h"
 #include "kis_animation_exporter.h"
-#endif
+
 class ToolDockerFactory : public KoDockFactoryBase
 {
 public:
