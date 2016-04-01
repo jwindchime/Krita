@@ -859,6 +859,7 @@ void KisCanvas2::setLodAllowedInCanvas(bool value)
         m_d->currentCanvasIsOpenGL &&
         (m_d->openGLFilterMode == KisOpenGL::TrilinearFilterMode ||
          m_d->openGLFilterMode == KisOpenGL::HighQualityFiltering);
+
     KisImageSP image = this->image();
 
     if (m_d->effectiveLodAllowedInCanvas() != !image->levelOfDetailBlocked()) {

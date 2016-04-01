@@ -65,7 +65,7 @@ public:
      *
      * \see processQueues()
      */
-    void unlock();
+    void unlock(bool resetLodLevels = true);
 
     /**
      * Called when it is necessary to reread configuration
@@ -160,7 +160,7 @@ public:
      * every time when the scheduler needs to synchronize LOD caches
      * of all the paint devices of the image.
      */
-    void setLod0ToNStrokeStrategyFactory(const KisStrokeStrategyFactory &factory);
+    void setLod0ToNStrokeStrategyFactory(const KisLodSyncStrokeStrategyFactory &factory);
 
     /**
      * Install a factory of a stroke strategy, that will be started

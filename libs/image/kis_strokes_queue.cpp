@@ -46,11 +46,12 @@ struct Q_DECL_HIDDEN KisStrokesQueue::Private {
     int desiredLevelOfDetail;
     int nextDesiredLevelOfDetail;
     QMutex mutex;
-    KisStrokeStrategyFactory lod0ToNStrokeStrategyFactory;
+    KisLodSyncStrokeStrategyFactory lod0ToNStrokeStrategyFactory;
     KisStrokeStrategyFactory suspendUpdatesStrokeStrategyFactory;
     KisStrokeStrategyFactory resumeUpdatesStrokeStrategyFactory;
 
-    void startLod0ToNStroke(int levelOfDetail);
+    void cancelForgettableStrokes();
+    void startLod0ToNStroke(int levelOfDetail, bool forgettable);
 
     bool canUseLodN() const;
     StrokesQueueIterator findNewLod0Pos();
@@ -76,7 +77,7 @@ KisStrokesQueue::~KisStrokesQueue()
     delete m_d;
 }
 
-void KisStrokesQueue::Private::startLod0ToNStroke(int levelOfDetail)
+void KisStrokesQueue::Private::startLod0ToNStroke(int levelOfDetail, bool forgettable)
 {
     // precondition: lock held!
     // precondition: lod > 0
@@ -84,12 +85,31 @@ void KisStrokesQueue::Private::startLod0ToNStroke(int levelOfDetail)
 
     if (!this->lod0ToNStrokeStrategyFactory) return;
 
-    KisStrokeStrategy *lod0ToN = this->lod0ToNStrokeStrategyFactory();
+    KisLodSyncPair syncPair = this->lod0ToNStrokeStrategyFactory(forgettable);
+    KisStrokeStrategy *lod0ToN = syncPair.first;
+    QList<KisStrokeJobData*> jobsData = syncPair.second;
+
     KisStrokeSP sync(new KisStroke(lod0ToN, KisStroke::LODN, levelOfDetail));
     lod0ToN->setCancelStrokeId(sync);
     this->strokesQueue.enqueue(sync);
+    Q_FOREACH (KisStrokeJobData *jobData, jobsData) {
+        sync->addJob(jobData);
+    }
     sync->endStroke();
     this->lodNNeedsSynchronization = false;
+}
+
+void KisStrokesQueue::Private::cancelForgettableStrokes()
+{
+    if (!strokesQueue.isEmpty() && !hasUnfinishedStrokes()) {
+        Q_FOREACH (KisStrokeSP stroke, strokesQueue) {
+            KIS_ASSERT_RECOVER_NOOP(stroke->isEnded());
+
+            if (stroke->canForgetAboutMe()) {
+                stroke->cancelStroke();
+            }
+        }
+    }
 }
 
 bool KisStrokesQueue::Private::canUseLodN() const
@@ -160,13 +180,15 @@ KisStrokeId KisStrokesQueue::startStroke(KisStrokeStrategy *strokeStrategy)
     KisStrokeSP stroke;
     KisStrokeStrategy* lodBuddyStrategy;
 
+    m_d->cancelForgettableStrokes();
+
     if (m_d->desiredLevelOfDetail &&
         m_d->canUseLodN() &&
         (lodBuddyStrategy =
          strokeStrategy->createLodClone(m_d->desiredLevelOfDetail))) {
 
         if (m_d->lodNNeedsSynchronization) {
-            m_d->startLod0ToNStroke(m_d->desiredLevelOfDetail);
+            m_d->startLod0ToNStroke(m_d->desiredLevelOfDetail, false);
         }
 
         stroke = KisStrokeSP(new KisStroke(strokeStrategy, KisStroke::LOD0, 0));
@@ -224,7 +246,6 @@ void KisStrokesQueue::addJob(KisStrokeId id, KisStrokeJobData *data)
 
     KisStrokeSP stroke = id.toStrongRef();
     Q_ASSERT(stroke);
-    stroke->addJob(data);
 
     KisStrokeSP buddy = stroke->lodBuddy();
     if (buddy) {
@@ -234,6 +255,8 @@ void KisStrokesQueue::addJob(KisStrokeId id, KisStrokeJobData *data)
 
         buddy->addJob(clonedData);
     }
+
+    stroke->addJob(data);
 }
 
 void KisStrokesQueue::endStroke(KisStrokeId id)
@@ -368,11 +391,15 @@ void KisStrokesQueue::Private::switchDesiredLevelOfDetail(bool forced)
                 return;
         }
 
+        const bool forgettable =
+            forced && !lodNNeedsSynchronization &&
+            desiredLevelOfDetail == nextDesiredLevelOfDetail;
+
         desiredLevelOfDetail = nextDesiredLevelOfDetail;
-        lodNNeedsSynchronization = true;
+        lodNNeedsSynchronization |= !forgettable;
 
         if (desiredLevelOfDetail) {
-            startLod0ToNStroke(desiredLevelOfDetail);
+            startLod0ToNStroke(desiredLevelOfDetail, forgettable);
         }
     }
 }
@@ -400,7 +427,7 @@ void KisStrokesQueue::notifyUFOChangedImage()
     m_d->lodNNeedsSynchronization = true;
 }
 
-void KisStrokesQueue::setLod0ToNStrokeStrategyFactory(const KisStrokeStrategyFactory &factory)
+void KisStrokesQueue::setLod0ToNStrokeStrategyFactory(const KisLodSyncStrokeStrategyFactory &factory)
 {
     m_d->lod0ToNStrokeStrategyFactory = factory;
 }

@@ -42,7 +42,6 @@ QWidget* KisScratchPadEventFilter::parentWidget()
 
 KoPointerEvent* KisScratchPadEventFilter::createMouseEvent(QEvent *event)
 {
-    qDebug() << "Dispatching mouse event to KisScratchPad";
     QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
     return new KoPointerEvent(mouseEvent, m_widgetToDocument.map(mouseEvent->pos()));
 }

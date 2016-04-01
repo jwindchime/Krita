@@ -37,6 +37,7 @@ namespace KritaUtils
     QSize KRITAIMAGE_EXPORT optimalPatchSize();
 
     QVector<QRect> KRITAIMAGE_EXPORT splitRectIntoPatches(const QRect &rc, const QSize &patchSize);
+    QVector<QRect> KRITAIMAGE_EXPORT splitRegionIntoPatches(const QRegion &region, const QSize &patchSize);
 
     QRegion KRITAIMAGE_EXPORT splitTriangles(const QPointF &center,
                                              const QVector<QPointF> &points);
@@ -80,6 +81,17 @@ namespace KritaUtils
         }
 
         return true;
+    }
+
+    template <class C>
+        void makeContainerUnique(C &container) {
+        std::sort(container.begin(), container.end());
+        auto newEnd = std::unique(container.begin(), container.end());
+
+        while (newEnd != container.end()) {
+            container.erase(newEnd);
+            ++newEnd;
+        }
     }
 
     /**

@@ -499,6 +499,9 @@ KisDocument::~KisDocument()
     d->image->requestStrokeCancellation();
     d->image->waitForDone();
 
+    // clear undo commands that can still point to the image
+    d->undoStack->clear();
+
     KisImageWSP sanityCheckPointer = d->image;
 
     // The following line trigger the deletion of the image
@@ -812,7 +815,7 @@ bool KisDocument::saveNativeFormat(const QString & file)
     const int realAutoSaveInterval = KisConfig().autoSaveInterval();
     const int emergencyAutoSaveInterval = 10; // sec
 
-    if (!d->image->tryBarrierLock()) {
+    if (!d->image->tryBarrierLock(true)) {
         if (isAutosaving()) {
             setDisregardAutosaveFailure(true);
             if (realAutoSaveInterval) {
@@ -822,7 +825,7 @@ bool KisDocument::saveNativeFormat(const QString & file)
         } else {
             d->image->requestStrokeEnd();
             QApplication::processEvents();
-            if (!d->image->tryBarrierLock()) {
+            if (!d->image->tryBarrierLock(true)) {
                 return false;
             }
         }

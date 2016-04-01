@@ -57,6 +57,7 @@
 
 #include <kis_image.h>
 #include <kis_node.h>
+
 #include <kis_group_layer.h>
 #include <kis_layer.h>
 #include <kis_mask.h>
@@ -311,8 +312,6 @@ void KisView::showFloatingMessageImpl(const QString &message, const QIcon& icon,
 void KisView::setViewManager(KisViewManager *view)
 {
     d->viewManager = view;
-
-    connect(canvasController(), SIGNAL(toolOptionWidgetsChanged(QList<QPointer<QWidget> >)), d->viewManager->mainWindow(), SLOT(newOptionWidgets(QList<QPointer<QWidget> >)));
 
     KoToolManager::instance()->addController(&d->canvasController);
     KoToolManager::instance()->registerToolActions(d->actionCollection, &d->canvasController);

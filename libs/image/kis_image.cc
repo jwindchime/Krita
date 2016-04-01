@@ -119,6 +119,7 @@ class KisImage::KisImagePrivate
 public:
     KisImagePrivate(KisImage *_q, qint32 w, qint32 h, const KoColorSpace *c, KisUndoStore *u)
         : q(_q)
+        , lockedForReadOnly(false)
         , width(w)
         , height(h)
         , colorSpace(c)
@@ -135,6 +136,7 @@ public:
     KisImage *q;
 
     quint32 lockCount = 0;
+    bool lockedForReadOnly;
 
     qint32 width;
     qint32 height;
@@ -205,7 +207,10 @@ KisImage::KisImage(KisUndoStore *undoStore, qint32 width, qint32 height, const K
 
         // Each of these lambdas defines a new factory function.
         m_d->scheduler.setLod0ToNStrokeStrategyFactory(
-            [=](){return new KisSyncLodCacheStrokeStrategy(KisImageWSP(this));});
+            [=](bool forgettable){return
+                    KisLodSyncPair(
+                        new KisSyncLodCacheStrokeStrategy(KisImageWSP(this), forgettable),
+                        KisSyncLodCacheStrokeStrategy::createJobsData(KisImageWSP(this)));});
         m_d->scheduler.setSuspendUpdatesStrokeStrategyFactory(
             [=](){return new KisSuspendProjectionUpdatesStrokeStrategy(KisImageWSP(this), true);});
         m_d->scheduler.setResumeUpdatesStrokeStrategyFactory(
@@ -379,25 +384,31 @@ bool KisImage::locked() const
     return m_d->lockCount != 0;
 }
 
-void KisImage::barrierLock()
+void KisImage::barrierLock(bool readOnly)
 {
     if (!locked()) {
         requestStrokeEnd();
         m_d->scheduler.barrierLock();
+        m_d->lockedForReadOnly = readOnly;
+    } else {
+        m_d->lockedForReadOnly &= readOnly;
     }
+
     m_d->lockCount++;
 }
 
-bool KisImage::tryBarrierLock()
+bool KisImage::tryBarrierLock(bool readOnly)
 {
     bool result = true;
 
     if (!locked()) {
         result = m_d->scheduler.tryBarrierLock();
+        m_d->lockedForReadOnly = readOnly;
     }
 
     if (result) {
         m_d->lockCount++;
+        m_d->lockedForReadOnly &= readOnly;
     }
 
     return result;
@@ -415,6 +426,7 @@ void KisImage::lock()
         m_d->scheduler.lock();
     }
     m_d->lockCount++;
+    m_d->lockedForReadOnly = false;
 }
 
 void KisImage::unlock()
@@ -425,7 +437,7 @@ void KisImage::unlock()
         m_d->lockCount--;
 
         if (m_d->lockCount == 0) {
-            m_d->scheduler.unlock();
+            m_d->scheduler.unlock(!m_d->lockedForReadOnly);
         }
     }
 }
@@ -1003,6 +1015,19 @@ QRect KisImage::bounds() const
     return QRect(0, 0, width(), height());
 }
 
+QRect KisImage::effectiveLodBounds() const
+{
+    QRect boundRect = bounds();
+
+    const int lod = currentLevelOfDetail();
+    if (lod > 0) {
+        KisLodTransform t(lod);
+        boundRect = t.map(boundRect);
+    }
+
+    return boundRect;
+}
+
 KisPostExecutionUndoAdapter* KisImage::postExecutionUndoAdapter() const
 {
     return &m_d->postExecutionUndoAdapter;
@@ -1392,6 +1417,8 @@ void KisImage::requestProjectionUpdateImpl(KisNode *node,
                                            const QRect &rect,
                                            const QRect &cropRect)
 {
+    if (rect.isEmpty()) return;
+
     KisNodeGraphListener::requestProjectionUpdate(node, rect);
     m_d->scheduler.updateProjection(node, rect, cropRect);
 }
@@ -1413,7 +1440,7 @@ void KisImage::requestProjectionUpdate(KisNode *node, const QRect& rect)
      * supporting the wrap-around mode will not make much harm.
      */
     if (m_d->wrapAroundModePermitted) {
-        QRect boundRect = bounds();
+        const QRect boundRect = effectiveLodBounds();
         KisWrappedRect splitRect(rect, boundRect);
 
         Q_FOREACH (const QRect &rc, splitRect) {

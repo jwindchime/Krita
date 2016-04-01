@@ -162,12 +162,12 @@ public:
     }
 
     KisDataManagerSP frameDataManager(int frameId) const {
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
         return data->dataManager();
     }
 
     void invalidateFrameCache(int frameId) {
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
         return data->cache()->invalidate();
     }
 
@@ -224,10 +224,11 @@ public:
             data = m_data;
             m_data.clear();
         } else if (copy) {
-            data = toQShared(new Data(m_frames[copySrc].data(), true));
+            DataSP srcData = m_frames[copySrc];
+            data = toQShared(new Data(srcData.data(), true));
         } else {
-            Data *srcData = m_frames.begin().value().data();
-            data = toQShared(new Data(srcData, false));
+            DataSP srcData = m_frames.begin().value();
+            data = toQShared(new Data(srcData.data(), false));
         }
 
         if (!copy) {
@@ -272,7 +273,7 @@ public:
 
     QRect frameBounds(int frameId)
     {
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
 
         QRect extent = data->dataManager()->extent();
         extent.translate(data->x(), data->y());
@@ -281,12 +282,12 @@ public:
     }
 
     QPoint frameOffset(int frameId) const {
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
         return QPoint(data->x(), data->y());
     }
 
     void setFrameOffset(int frameId, const QPoint &offset) {
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
         data->setX(offset.x());
         data->setY(offset.y());
     }
@@ -298,24 +299,24 @@ public:
 
     bool readFrame(QIODevice *stream, int frameId) {
         bool retval = false;
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
         retval = data->dataManager()->read(stream);
         data->cache()->invalidate();
         return retval;
     }
 
     bool writeFrame(KisPaintDeviceWriter &store, int frameId) {
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
         return data->dataManager()->write(store);
     }
 
     void setFrameDefaultPixel(const quint8 *defPixel, int frameId) {
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
         data->dataManager()->setDefaultPixel(defPixel);
     }
 
     const quint8* frameDefaultPixel(int frameId) const {
-        Data *data = m_frames[frameId].data();
+        DataSP data = m_frames[frameId];
         return data->dataManager()->defaultPixel();
     }
 
@@ -324,7 +325,11 @@ public:
     void uploadFrame(int dstFrameId, KisPaintDeviceSP srcDevice);
     void uploadFrameData(DataSP srcData, DataSP dstData);
 
-    QRegion syncLodData(int newLod);
+    struct LodDataStruct;
+    LodDataStruct* createLodDataStruct(int lod);
+    void updateLodDataStruct(LodDataStruct *dst, const QRect &srcRect);
+    void uploadLodDataStruct(LodDataStruct *dst);
+    QRegion regionForLodSyncing() const;
 
     void tesingFetchLodDevice(KisPaintDeviceSP targetDevice);
 
@@ -367,18 +372,22 @@ private:
         return data;
     }
 
+    inline void ensureLodDataPreset() const {
+        if (!m_lodData) {
+            Data *srcData = currentNonLodData();
+
+            QMutexLocker l(&m_dataSwitchLock);
+            if (!m_lodData) {
+                m_lodData.reset(new Data(srcData, false));
+            }
+        }
+    }
+
     inline Data* currentData() const {
         Data *data = m_data.data();
 
         if (defaultBounds->currentLevelOfDetail()) {
-            if (!m_lodData) {
-                Data *srcData = currentNonLodData();
-
-                QMutexLocker l(&m_dataSwitchLock);
-                if (!m_lodData) {
-                    m_lodData.reset(new Data(srcData, false));
-                }
-            }
+            ensureLodDataPreset();
             data = m_lodData.data();
         } else {
             data = currentNonLodData();
@@ -462,46 +471,10 @@ KisPaintDevice::Private::KisPaintDeviceStrategy* KisPaintDevice::Private::curren
 
     QRect wrapRect = defaultBounds->bounds();
     if (!wrappedStrategy || wrappedStrategy->wrapRect() != wrapRect) {
-        wrappedStrategy.reset(new KisPaintDeviceWrappedStrategy(defaultBounds->bounds(), q, this));
+        wrappedStrategy.reset(new KisPaintDeviceWrappedStrategy(wrapRect, q, this));
     }
 
     return wrappedStrategy.data();
-}
-
-QRegion KisPaintDevice::Private::syncLodData(int newLod)
-{
-    Data *srcData = currentNonLodData();
-
-    if (!m_lodData) {
-        m_lodData.reset(new Data(srcData, false));
-    }
-
-    int expectedX = KisLodTransform::coordToLodCoord(srcData->x(), newLod);
-    int expectedY = KisLodTransform::coordToLodCoord(srcData->y(), newLod);
-
-    /**
-     * We compare color spaces as pure pointers, because they must be
-     * exactly the same, since they come from the common source.
-     */
-    if (m_lodData->levelOfDetail() != newLod ||
-        m_lodData->colorSpace() != srcData->colorSpace() ||
-        m_lodData->x() != expectedX ||
-        m_lodData->y() != expectedY) {
-
-
-        m_lodData->prepareClone(srcData);
-
-        m_lodData->setLevelOfDetail(newLod);
-        m_lodData->setX(expectedX);
-        m_lodData->setY(expectedY);
-
-        // FIXME: different kind of synchronization
-    }
-
-    QRegion dirtyRegion = syncWholeDevice(srcData);
-    m_lodData->cache()->invalidate();
-
-    return dirtyRegion;
 }
 
 struct KisPaintDevice::Private::StrategyPolicy {
@@ -533,22 +506,64 @@ struct KisPaintDevice::Private::StrategyPolicy {
     int m_offsetY;
 };
 
-QRegion KisPaintDevice::Private::syncWholeDevice(Data *srcData)
+struct KisPaintDevice::Private::LodDataStruct
 {
-    KIS_ASSERT_RECOVER(m_lodData) { return QRegion(); }
+    LodDataStruct(Data *_lodData) : lodData(_lodData) {}
+    Data *lodData;
+};
 
-    m_lodData->dataManager()->clear();
+QRegion KisPaintDevice::Private::regionForLodSyncing() const
+{
+    Data *srcData = currentNonLodData();
+    return srcData->dataManager()->region().translated(srcData->x(), srcData->y());
+}
 
-    int lod = m_lodData->levelOfDetail();
-    int srcStepSize = 1 << lod;
+KisPaintDevice::Private::LodDataStruct* KisPaintDevice::Private::createLodDataStruct(int newLod)
+{
+    Data *srcData = currentNonLodData();
 
-    // FIXME:
-    QRect rcFIXME= srcData->dataManager()->extent().translated(srcData->x(), srcData->y());
-    if (!rcFIXME.isValid()) return QRegion();
+    Data *lodData = new Data(srcData, false);
+    LodDataStruct *lodStruct = new LodDataStruct(lodData);
 
-    QRect srcRect = KisLodTransform::alignedRect(rcFIXME, lod);
-    QRect dstRect = KisLodTransform::scaledRect(srcRect, lod);
-    if (!srcRect.isValid() || !dstRect.isValid()) return QRegion();
+    int expectedX = KisLodTransform::coordToLodCoord(srcData->x(), newLod);
+    int expectedY = KisLodTransform::coordToLodCoord(srcData->y(), newLod);
+
+    /**
+     * We compare color spaces as pure pointers, because they must be
+     * exactly the same, since they come from the common source.
+     */
+    if (lodData->levelOfDetail() != newLod ||
+        lodData->colorSpace() != srcData->colorSpace() ||
+        lodData->x() != expectedX ||
+        lodData->y() != expectedY) {
+
+
+        lodData->prepareClone(srcData);
+
+        lodData->setLevelOfDetail(newLod);
+        lodData->setX(expectedX);
+        lodData->setY(expectedY);
+
+        // FIXME: different kind of synchronization
+    }
+
+    //QRegion dirtyRegion = syncWholeDevice(srcData);
+    lodData->cache()->invalidate();
+
+    return lodStruct;
+}
+
+void KisPaintDevice::Private::updateLodDataStruct(LodDataStruct *dst, const QRect &originalRect)
+{
+    Data *lodData = dst->lodData;
+    Data *srcData = currentNonLodData();
+
+    const int lod = lodData->levelOfDetail();
+    const int srcStepSize = 1 << lod;
+
+    const QRect srcRect = KisLodTransform::alignedRect(originalRect, lod);
+    const QRect dstRect = KisLodTransform::scaledRect(srcRect, lod);
+    if (!srcRect.isValid() || !dstRect.isValid()) return;
 
     KIS_ASSERT_RECOVER_NOOP(srcRect.width() / srcStepSize == dstRect.width());
 
@@ -582,7 +597,7 @@ QRegion KisPaintDevice::Private::syncWholeDevice(Data *srcData)
     }
 
     InternalSequentialConstIterator srcIntIt(StrategyPolicy(currentStrategy(), srcData->dataManager().data(), srcData->x(), srcData->y()), srcRect);
-    InternalSequentialIterator dstIntIt(StrategyPolicy(currentStrategy(), m_lodData->dataManager().data(), m_lodData->x(), m_lodData->y()), dstRect);
+    InternalSequentialIterator dstIntIt(StrategyPolicy(currentStrategy(), lodData->dataManager().data(), lodData->x(), lodData->y()), dstRect);
 
     int rowsRemaining = srcRect.height();
     while (rowsRemaining > 0) {
@@ -627,9 +642,17 @@ QRegion KisPaintDevice::Private::syncWholeDevice(Data *srcData)
 
         rowsRemaining--;
     }
+}
 
-    QRegion dirtyRegion(dstRect);
-    return dirtyRegion;
+void KisPaintDevice::Private::uploadLodDataStruct(LodDataStruct *dst)
+{
+    KIS_ASSERT_RECOVER_RETURN(
+        dst->lodData->levelOfDetail() == defaultBounds->currentLevelOfDetail());
+
+    ensureLodDataPreset();
+
+    m_lodData->prepareClone(dst->lodData);
+    m_lodData->dataManager()->bitBltRough(dst->lodData->dataManager(), dst->lodData->dataManager()->extent());
 }
 
 void KisPaintDevice::Private::transferFromData(Data *data, KisPaintDeviceSP targetDevice)
@@ -643,8 +666,8 @@ void KisPaintDevice::Private::transferFromData(Data *data, KisPaintDeviceSP targ
 
 void KisPaintDevice::Private::fetchFrame(int frameId, KisPaintDeviceSP targetDevice)
 {
-    Data *data = m_frames[frameId].data();
-    transferFromData(data, targetDevice);
+    DataSP data = m_frames[frameId];
+    transferFromData(data.data(), targetDevice);
 }
 
 void KisPaintDevice::Private::uploadFrame(int srcFrameId, int dstFrameId, KisPaintDeviceSP srcDevice)
@@ -1694,16 +1717,32 @@ KisPaintDevice::MemoryReleaseObject* KisPaintDevice::createMemoryReleaseObject()
     return new MemoryReleaseObject();
 }
 
-QRegion KisPaintDevice::syncLodCache(int levelOfDetail)
+struct KisPaintDevice::LodDataStruct {
+    LodDataStruct(Private::LodDataStruct *_lodData) : lodData(_lodData) {}
+    Private::LodDataStruct *lodData;
+};
+
+QRegion KisPaintDevice::regionForLodSyncing() const
 {
-    QRegion dirtyRegion;
-
-    if (levelOfDetail) {
-        dirtyRegion = m_d->syncLodData(levelOfDetail);
-    }
-
-    return dirtyRegion;
+    return m_d->regionForLodSyncing();
 }
+
+KisPaintDevice::LodDataStruct* KisPaintDevice::createLodDataStruct(int lod)
+{
+    Private::LodDataStruct *lodData = m_d->createLodDataStruct(lod);
+    return new LodDataStruct(lodData);
+}
+
+void KisPaintDevice::updateLodDataStruct(LodDataStruct *dst, const QRect &srcRect)
+{
+    m_d->updateLodDataStruct(dst->lodData, srcRect);
+}
+
+void KisPaintDevice::uploadLodDataStruct(LodDataStruct *dst)
+{
+    m_d->uploadLodDataStruct(dst->lodData);
+}
+
 
 KisPaintDeviceFramesInterface* KisPaintDevice::framesInterface()
 {

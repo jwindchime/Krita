@@ -177,8 +177,8 @@ public:
         , showDocumentInfo(0)
         , saveAction(0)
         , saveActionAs(0)
-        , printAction(0)
-        , printActionPreview(0)
+//        , printAction(0)
+//        , printActionPreview(0)
         , exportPdf(0)
         , closeAll(0)
 //        , reloadFile(0)
@@ -236,8 +236,8 @@ public:
     KisAction *showDocumentInfo;
     KisAction *saveAction;
     KisAction *saveActionAs;
-    KisAction *printAction;
-    KisAction *printActionPreview;
+//    KisAction *printAction;
+//    KisAction *printActionPreview;
     KisAction *exportPdf;
     KisAction *importAnimation;
     KisAction *exportAnimation;
@@ -343,6 +343,7 @@ KisMainWindow::KisMainWindow()
     if (cfg.toolOptionsInDocker()) {
         ToolDockerFactory toolDockerFactory;
         d->toolOptionsDocker = qobject_cast<KoToolDocker*>(createDockWidget(&toolDockerFactory));
+        d->toolOptionsDocker->toggleViewAction()->setEnabled(true);
     }
 
     QMap<QString, QAction*> dockwidgetActions;
@@ -352,6 +353,8 @@ KisMainWindow::KisMainWindow()
         QDockWidget *dw = createDockWidget(factory);
         dockwidgetActions[dw->toggleViewAction()->text()] = dw->toggleViewAction();
     }
+    dockwidgetActions[d->toolOptionsDocker->toggleViewAction()->text()] = d->toolOptionsDocker->toggleViewAction();
+
     Q_FOREACH (QString title, dockwidgetActions.keys()) {
         d->dockWidgetMenu->addAction(dockwidgetActions[title]);
     }
@@ -453,10 +456,10 @@ KisMainWindow::KisMainWindow()
     configChanged();
 
     // If we have customized the toolbars, load that first
-    setLocalXMLFile(KoResourcePaths::locateLocal("data", "krita/krita.xmlgui"));
+    setLocalXMLFile(KoResourcePaths::locateLocal("data", "krita.xmlgui"));
 
     QString doc;
-    QStringList allFiles = KoResourcePaths::findAllResources("data", "krita/krita.xmlgui");
+    QStringList allFiles = KoResourcePaths::findAllResources("data", "krita.xmlgui");
     // We need at least one krita.xmlgui file!
     if (allFiles.size() == 0) {
         m_errorMessage = i18n("Krita cannot find the configuration file! Krita will quit now.");
@@ -802,9 +805,6 @@ QStringList KisMainWindow::showOpenFileDialog()
     dialog.setMimeTypeFilters(KisImportExportManager::mimeFilter(KIS_MIME_TYPE,
                                                                  KisImportExportManager::Import,
                                                                  KisDocument::extraNativeMimeTypes()));
-    QStringList filters = dialog.nameFilters();
-    filters << i18n("All files (*.*)");
-    dialog.setNameFilters(filters);
     dialog.setHideNameFilterDetailsOption();
     dialog.setCaption(isImporting() ? i18n("Import Images") : i18n("Open Images"));
 
@@ -1288,7 +1288,7 @@ void KisMainWindow::slotFileNew()
                                                                       KisImportExportManager::Import,
                                                                       KisDocument::extraNativeMimeTypes());
 
-    startupWidget = new KisOpenPane(this, mimeFilter, QStringLiteral("krita/templates/"));
+    startupWidget = new KisOpenPane(this, mimeFilter, QStringLiteral("templates/"));
     startupWidget->setWindowModality(Qt::WindowModal);
 
     KisConfig cfg;
@@ -2269,11 +2269,11 @@ void KisMainWindow::createActions()
     d->saveActionAs = actionManager->createStandardAction(KStandardAction::SaveAs, this, SLOT(slotFileSaveAs()));
     d->saveActionAs->setActivationFlags(KisAction::ACTIVE_IMAGE);
 
-    d->printAction = actionManager->createStandardAction(KStandardAction::Print, this, SLOT(slotFilePrint()));
-    d->printAction->setActivationFlags(KisAction::ACTIVE_IMAGE);
+//    d->printAction = actionManager->createStandardAction(KStandardAction::Print, this, SLOT(slotFilePrint()));
+//    d->printAction->setActivationFlags(KisAction::ACTIVE_IMAGE);
 
-    d->printActionPreview = actionManager->createStandardAction(KStandardAction::PrintPreview, this, SLOT(slotFilePrintPreview()));
-    d->printActionPreview->setActivationFlags(KisAction::ACTIVE_IMAGE);
+//    d->printActionPreview = actionManager->createStandardAction(KStandardAction::PrintPreview, this, SLOT(slotFilePrintPreview()));
+//    d->printActionPreview->setActivationFlags(KisAction::ACTIVE_IMAGE);
 
     d->undo = actionManager->createStandardAction(KStandardAction::Undo, this, SLOT(undo()));
     d->undo ->setActivationFlags(KisAction::ACTIVE_IMAGE);

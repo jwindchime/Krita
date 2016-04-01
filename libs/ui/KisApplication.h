@@ -87,6 +87,11 @@ public:
      */
     void setSplashScreen(QWidget *splash);
 
+    void setSplashScreenLoadingText(QString);
+
+
+
+
     /// Overridden to handle exceptions from event handlers.
     bool notify(QObject *receiver, QEvent *event);
 
@@ -102,6 +107,8 @@ private:
     void checkAutosaveFiles();
     bool createNewDocFromTemplate(const QString &fileName, KisMainWindow *mainWindow);
     void clearConfig();
+    void loadResources();
+    void loadPlugins();
 
 private:
     KisApplicationPrivate * const d;
