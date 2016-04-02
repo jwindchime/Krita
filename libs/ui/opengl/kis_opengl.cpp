@@ -75,9 +75,7 @@ int KisOpenGL::initializeContext(QOpenGLContext* ctx) {
     QSurfaceFormat format = ctx->format();
     glVersion = 100 * format.majorVersion() + format.minorVersion();
 
-    dbgOpenGL << "GL Version:" << glVersion << format.swapInterval() << format.swapBehavior();
-
-    QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+    QOpenGLFunctions *f = s->functions();
 
 #ifndef GL_RENDERER
 #  define GL_RENDERER 0x1F01
