@@ -31,6 +31,8 @@ class QPainter;
 #include <QVector>
 #include "kritaimage_export.h"
 #include "kis_types.h"
+#include <functional>
+
 
 namespace KritaUtils
 {
@@ -92,6 +94,17 @@ namespace KritaUtils
             newEnd = container.erase(newEnd);
         }
     }
+
+
+    template <class C>
+        void filterContainer(C &container, std::function<bool(typename C::value_type)> keepIf) {
+
+            auto newEnd = std::remove_if(container.begin(), container.end(), std::unary_negate<decltype(keepIf)>(keepIf));
+            while (newEnd != container.end()) {
+               newEnd = container.erase(newEnd);
+            }
+    }
+
 
     /**
      * When drawing a rect Qt uses quite a weird algorithm. It
