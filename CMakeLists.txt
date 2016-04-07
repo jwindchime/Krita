@@ -387,11 +387,6 @@ endif()
 add_definitions(-DBOOST_ALL_NO_LIB)
 find_package(Boost REQUIRED COMPONENTS system) # for pigment and stage
 
-if (APPLE)
-    SET(CMAKE_CXX_FLAGS "-stdlib=libstdc++ -std=c++11")
-#    find_package(Carbon REQUIRED)
-endif ()
-
 ##
 ## Test for GNU Scientific Library
 ##
