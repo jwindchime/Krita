@@ -85,7 +85,6 @@
 #include "opengl/kis_opengl.h"
 
 #include <CalligraVersionWrapper.h>
-
 namespace {
 const QTime appStartTime(QTime::currentTime());
 }
@@ -322,22 +321,24 @@ bool KisApplication::start(const KisApplicationArguments &args)
 
     }
 #endif
-
+#endif
     QDir appdir(applicationDirPath());
     appdir.cdUp();
 
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    if (!env.contains("XDG_DATA_DIRS")) {
-        qDebug() << "Setting XDG_DATA_DIRS" << KoResourcePaths::getApplicationRoot() + "/share";
-        qputenv("XDG_DATA_DIRS", QFile::encodeName(KoResourcePaths::getApplicationRoot() + "/share"));
-    }
+#ifdef Q_OS_LINUX
+    qputenv("XDG_DATA_DIRS", QFile::encodeName(KoResourcePaths::getApplicationRoot() + "/share") + ":" + qgetenv("XDG_DATA_DIRS"));
+#else
+    qputenv("XDG_DATA_DIRS", QFile::encodeName(KoResourcePaths::getApplicationRoot() + "/share"));
+#endif
+    //qDebug() << "Setting XDG_DATA_DIRS" << qgetenv("XDG_DATA_DIRS");
+
     qputenv("PATH", QFile::encodeName(appdir.absolutePath() + "/bin" + ";"
                                       + appdir.absolutePath() + "/lib" + ";"
                                       + appdir.absolutePath() + "/lib/kde4" + ";"
                                       + appdir.absolutePath() + "/Frameworks" + ";"
                                       + appdir.absolutePath()));
 
-#endif
+
 
     setSplashScreenLoadingText(i18n("Initializing Globals"));
     initializeGlobals(args);
