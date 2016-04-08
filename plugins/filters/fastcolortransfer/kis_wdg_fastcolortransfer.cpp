@@ -34,7 +34,7 @@
 #include <kundo2command.h>
 #include <KoColorSpaceRegistry.h>
 #include <KisImportExportManager.h>
-#include <kis_url_requester.h>
+#include <kis_file_name_requester.h>
 #include "ui_wdgfastcolortransfer.h"
 
 KisWdgFastColorTransfer::KisWdgFastColorTransfer(QWidget * parent) : KisConfigWidget(parent)
@@ -55,7 +55,7 @@ void KisWdgFastColorTransfer::setConfiguration(const KisPropertiesConfiguration*
 {
     QVariant value;
     if (config->getProperty("filename", value)) {
-        widget()->fileNameURLRequester->setUrl(QUrl::fromUserInput(value.toString()));
+        widget()->fileNameURLRequester->setFileName(value.toString());
     }
 
 }
@@ -63,7 +63,7 @@ void KisWdgFastColorTransfer::setConfiguration(const KisPropertiesConfiguration*
 KisPropertiesConfiguration* KisWdgFastColorTransfer::configuration() const
 {
     KisFilterConfiguration* config = new KisFilterConfiguration("colortransfer", 1);
-    QString fileName = this->widget()->fileNameURLRequester->url().toLocalFile();
+    QString fileName = this->widget()->fileNameURLRequester->fileName();
 
     if (fileName.isEmpty()) return config;
 
