@@ -460,7 +460,6 @@ KisMainWindow::KisMainWindow()
 
     // If we have customized the toolbars, load that first
     setLocalXMLFile(KoResourcePaths::locateLocal("data", "krita.xmlgui"));
-    QString doc;
     setXMLFile(":/kxmlgui5/krita.xmlgui");
 
     guiFactory()->addClient(this);
@@ -2143,8 +2142,7 @@ void KisMainWindow::configChanged()
 void KisMainWindow::newView(QObject *document)
 {
     KisDocument *doc = qobject_cast<KisDocument*>(document);
-    KisView *view = KisPart::instance()->createView(doc, resourceManager(), actionCollection(), this);
-    addView(view);
+    addViewAndNotifyLoadingCompleted(doc);
     d->actionManager()->updateGUI();
 }
 
