@@ -828,7 +828,7 @@ KisDlgPreferences::KisDlgPreferences(QWidget* parent, const char* name)
     KPageWidgetItem *page = new KPageWidgetItem(vbox, i18n("General"));
     page->setObjectName("general");
     page->setHeader(i18n("General"));
-    page->setIcon(KisIconUtils::loadIcon("configure"));
+    page->setIcon(KisIconUtils::loadIcon("go-home"));
     addPage(page);
     m_general = new GeneralTab(vbox);
 
@@ -837,7 +837,7 @@ KisDlgPreferences::KisDlgPreferences(QWidget* parent, const char* name)
     page = new KPageWidgetItem(vbox, i18n("Keyboard Shortcuts"));
     page->setObjectName("shortcuts");
     page->setHeader(i18n("Shortcuts"));
-    page->setIcon(KisIconUtils::loadIcon("configure-shortcuts"));
+    page->setIcon(KisIconUtils::loadIcon("document-export"));
     addPage(page);
     m_shortcutSettings = new ShortcutSettingsTab(vbox);
     connect(this, SIGNAL(accepted()), m_shortcutSettings, SLOT(saveChanges()));
@@ -848,7 +848,7 @@ KisDlgPreferences::KisDlgPreferences(QWidget* parent, const char* name)
     page = addPage(m_inputConfiguration, i18n("Canvas Input Settings"));
     page->setHeader(i18n("Canvas Input"));
     page->setObjectName("canvasinput");
-    page->setIcon(KisIconUtils::loadIcon("applications-system"));
+    page->setIcon(KisIconUtils::loadIcon("configure"));
 
     // Display
     vbox = new KoVBox();
