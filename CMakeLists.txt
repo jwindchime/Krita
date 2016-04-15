@@ -262,7 +262,7 @@ include (MacroLibrary)
 include (MacroAdditionalCleanFiles)
 include (MacroAddFileDependencies)
 
-macro_ensure_out_of_source_build("Compiling Calligra inside the source directory is not possible. Please refer to the build instruction http://community.kde.org/Calligra/Building/Building_Calligra")
+macro_ensure_out_of_source_build("Compiling Krita inside the source directory is not possible. Please refer to the build instruction https://community.kde.org/Krita#Build_Instructions")
 
 # Note: OPTIONAL_COMPONENTS does not seem to be reliable
 # (as of ECM 5.15.0, CMake 3.2)
@@ -390,7 +390,7 @@ find_package(Boost REQUIRED COMPONENTS system) # for pigment and stage
 ##
 ## Test for GNU Scientific Library
 ##
-find_package(GSL REQUIRED)
+macro_optional_find_package(GSL)
 macro_log_feature(GSL_FOUND "GSL" "GNU Scientific Library" "http://www.gnu.org/software/gsl" FALSE "1.7" "Required by Krita's Transform tool.")
 macro_bool_to_01(GSL_FOUND HAVE_GSL)
 configure_file(config-gsl.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-gsl.h )
