@@ -16,38 +16,27 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#ifndef __KIS_ASPECT_RATIO_LOCKER_H
-#define __KIS_ASPECT_RATIO_LOCKER_H
+#ifndef __KIS_ONION_SKIN_CACHE_H
+#define __KIS_ONION_SKIN_CACHE_H
 
 #include <QScopedPointer>
-#include <QObject>
-#include "kritaui_export.h"
+#include "kis_types.h"
 
-class QSpinBox;
-class KoAspectButton;
 
-class KRITAUI_EXPORT KisAspectRatioLocker : public QObject
+class KisOnionSkinCache
 {
-    Q_OBJECT
 public:
-    KisAspectRatioLocker(QObject *parent);
-    ~KisAspectRatioLocker();
+    KisOnionSkinCache();
+    ~KisOnionSkinCache();
 
-    void connectSpinBoxes(QSpinBox *spinOne, QSpinBox *spinTwo, KoAspectButton *apectButton);
+    KisPaintDeviceSP projection(KisPaintDeviceSP source);
+    void reset();
 
-
-private Q_SLOTS:
-    void slotSpinOneChanged();
-    void slotSpinTwoChanged();
-    void slotAspectButtonChanged();
-
-Q_SIGNALS:
-    void sliderValueChanged();
-    void aspectButtonChanged();
+    KisPaintDeviceSP lodCapableDevice() const;
 
 private:
     struct Private;
     const QScopedPointer<Private> m_d;
 };
 
-#endif /* __KIS_ASPECT_RATIO_LOCKER_H */
+#endif /* __KIS_ONION_SKIN_CACHE_H */

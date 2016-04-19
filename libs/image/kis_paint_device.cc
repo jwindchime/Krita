@@ -118,9 +118,9 @@ public:
 
         if (!copyFrames) {
             if (m_data) {
-                m_data->prepareClone(rhs->currentData(), true);
+                m_data->prepareClone(rhs->currentNonLodData(), true);
             } else {
-                m_data = toQShared(new KisPaintDeviceData(rhs->currentData(), true));
+                m_data = toQShared(new KisPaintDeviceData(rhs->currentNonLodData(), true));
             }
         } else {
             if (m_data && !rhs->m_data) {
@@ -140,6 +140,10 @@ public:
                     m_frames.insert(it.key(), data);
                 }
             }
+        }
+
+        if (rhs->m_lodData) {
+            m_lodData.reset(new KisPaintDeviceData(rhs->m_lodData.data(), true));
         }
     }
 
@@ -1857,8 +1861,8 @@ KisPaintDeviceFramesInterface::testingGetDataObjects() const
 
     typedef KisPaintDevice::Private::FramesHash FramesHash;
 
-    FramesHash::iterator it = q->m_d->m_frames.begin();
-    FramesHash::iterator end = q->m_d->m_frames.end();
+    FramesHash::const_iterator it = q->m_d->m_frames.constBegin();
+    FramesHash::const_iterator end = q->m_d->m_frames.constEnd();
 
     for (; it != end; ++it) {
         objects.m_frames.insert(it.key(), it.value().data());

@@ -100,7 +100,7 @@ bool KisInputManager::Private::EventEater::eventFilter(QObject* target, QEvent* 
 void KisInputManager::Private::EventEater::activate()
 {
     if (!hungry && (KisTabletDebugger::instance()->debugEnabled()))
-        dbgTablet << "Start ignoring mouse events.";
+        qDebug() << "Start ignoring mouse events.";
     hungry = true;
 }
 
@@ -132,6 +132,7 @@ void KisInputManager::Private::maskSyntheticEvents(bool value)
 KisInputManager::Private::Private(KisInputManager *qq)
     : q(qq)
     , moveEventCompressor(10 /* ms */, KisSignalCompressor::FIRST_ACTIVE)
+    , priorityEventFilterSeqNo(0)
     , canvasSwitcher(this, qq)
 {
     KisConfig cfg;
