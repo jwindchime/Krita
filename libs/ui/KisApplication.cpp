@@ -83,9 +83,10 @@
 #include <kis_brush_server.h>
 #include <kis_resource_server_provider.h>
 #include <KoResourceServerProvider.h>
+#include "kis_image_barrier_locker.h"
 #include "opengl/kis_opengl.h"
 
-#include <CalligraVersionWrapper.h>
+#include <KritaVersionWrapper.h>
 namespace {
 const QTime appStartTime(QTime::currentTime());
 }
@@ -150,7 +151,7 @@ KisApplication::KisApplication(const QString &key, int &argc, char **argv)
 //    setOrganizationName("krita");
     setOrganizationDomain("krita.org");
 
-    QString version = CalligraVersionWrapper::versionString(true);
+    QString version = KritaVersionWrapper::versionString(true);
     setApplicationVersion(version);
     setWindowIcon(KisIconUtils::loadIcon("calligrakrita"));
 
@@ -350,7 +351,7 @@ bool KisApplication::start(const KisApplicationArguments &args)
 
     KoHashGeneratorProvider::instance()->setGenerator("MD5", new KisMD5Generator());
 
-    // Initialize all Calligra directories etc.
+    // Initialize all Krita directories etc.
     KoGlobal::initialize();
 
     KConfigGroup group(KSharedConfig::openConfig(), "theme");
@@ -428,6 +429,10 @@ bool KisApplication::start(const KisApplicationArguments &args)
 
                     KisDocument *doc = KisPart::instance()->createDocument();
                     doc->openUrl(QUrl::fromLocalFile(fileName));
+
+                    qApp->processEvents(); // For vector layers to be updated
+                    KisImageBarrierLocker locker(doc->image());
+
                     KisImportExportFilter::ConversionStatus status = KisImportExportFilter::OK;
                     KisImportExportManager manager(doc);
                     manager.setBatchMode(true);

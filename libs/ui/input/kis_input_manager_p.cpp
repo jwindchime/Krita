@@ -427,17 +427,15 @@ void KisInputManager::Private::eatOneMousePress()
     eventEater.eatOneMousePress();
 }
 
-bool KisInputManager::Private::handleCompressedTabletEvent(QObject *object, QTabletEvent *tevent)
+bool KisInputManager::Private::handleCompressedTabletEvent(QEvent *event)
 {
-    if(object == 0) return false;
-
     bool retval = false;
 
-    retval = q->eventFilter(object, tevent);
-
-    if (!retval && !tevent->isAccepted()) {
-        dbgInput << "Rejected a compressed tablet event.";
+    if (!matcher.pointerMoved(event)) {
+        toolProxy->forwardHoverEvent(event);
     }
+    retval = true;
+    event->setAccepted(true);
 
     return retval;
 }

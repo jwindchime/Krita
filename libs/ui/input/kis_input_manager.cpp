@@ -225,6 +225,49 @@ bool KisInputManager::eventFilter(QObject* object, QEvent* event)
     return eventFilterImpl(event);
 }
 
+template <class Event>
+bool KisInputManager::compressMoveEventCommon(Event *event)
+{
+    /**
+     * We construct a copy of this event object, so we must ensure it
+     * has a correct type.
+     */
+    static_assert(std::is_same<Event, QMouseEvent>::value ||
+                  std::is_same<Event, QTabletEvent>::value,
+                  "event should a mouse or a tablet event");
+
+    bool retval = false;
+
+    /**
+     * Compress the events if the tool doesn't need high resolution input
+     */
+    if ((event->type() == QEvent::MouseMove ||
+         event->type() == QEvent::TabletMove) &&
+        (!d->matcher.supportsHiResInputEvents() ||
+         d->testingCompressBrushEvents)) {
+
+        d->compressedMoveEvent.reset(new Event(*event));
+        d->moveEventCompressor.start();
+
+        /**
+         * On Linux Qt eats the rest of unneeded events if we
+         * ignore the first of the chunk of tablet events. So
+         * generally we should never activate this feature. Only
+         * for testing purposes!
+         */
+        if (d->testingAcceptCompressedTabletEvents) {
+            event->setAccepted(true);
+        }
+
+        retval = true;
+    } else {
+        slotCompressedMoveEvent();
+        retval = d->handleCompressedTabletEvent(event);
+    }
+
+    return retval;
+}
+
 bool KisInputManager::eventFilterImpl(QEvent * event)
 {
     // TODO: Handle touch events correctly.
@@ -296,12 +339,9 @@ bool KisInputManager::eventFilterImpl(QEvent * event)
         d->debugEvent<QMouseEvent, true>(event);
         break_if_should_ignore_cursor_events();
 
-        if (!d->matcher.pointerMoved(event)) {
-            //Update the current tool so things like the brush outline gets updated.
-            d->toolProxy->forwardHoverEvent(event);
-        }
-        retval = true;
-        event->setAccepted(retval);
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        retval = compressMoveEventCommon(mouseEvent);
+
         break;
     }
     case QEvent::Wheel: {
@@ -391,13 +431,9 @@ bool KisInputManager::eventFilterImpl(QEvent * event)
 
     case QEvent::TabletMove: {
         d->debugEvent<QTabletEvent, false>(event);
-        QTabletEvent *tabletEvent = static_cast<QTabletEvent*>(event);
 
-        if (!d->matcher.pointerMoved(tabletEvent)) {
-            d->toolProxy->forwardHoverEvent(tabletEvent);
-        }
-        retval = true;
-        event->setAccepted(true);
+        QTabletEvent *tabletEvent = static_cast<QTabletEvent*>(event);
+        retval = compressMoveEventCommon(tabletEvent);
 
         /**
          * The flow of tablet events means the tablet is in the
@@ -407,6 +443,7 @@ bool KisInputManager::eventFilterImpl(QEvent * event)
          * area)
          */
         start_ignore_cursor_events();
+
         break;
     }
 
@@ -467,11 +504,9 @@ bool KisInputManager::eventFilterImpl(QEvent * event)
 void KisInputManager::slotCompressedMoveEvent()
 {
     if (d->compressedMoveEvent) {
-
         // touch_stop_block_press_events();
 
-        (void) d->handleCompressedTabletEvent(d->eventsReceiver, d->compressedMoveEvent.data());
-
+        (void) d->handleCompressedTabletEvent(d->compressedMoveEvent.data());
         d->compressedMoveEvent.reset();
         dbgKrita << "Compressed move event received.";
     } else {

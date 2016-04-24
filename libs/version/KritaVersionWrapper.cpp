@@ -15,16 +15,22 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-#ifndef CALLIGRAVERSIONWRAPPER_H
-#define CALLIGRAVERSIONWRAPPER_H
+#include <KritaVersionWrapper.h>
 
-#include "kritaversion_export.h"
-#include <QString>
+#include <kritaversion.h>
+#include <kritagitversion.h>
 
-namespace CalligraVersionWrapper {
+QString KritaVersionWrapper::versionString(bool checkGit)
+{
+    QString kritaVersion(KRITA_VERSION_STRING);
+    QString version = kritaVersion;
 
-    KRITAVERSION_EXPORT QString versionYear();
-    KRITAVERSION_EXPORT QString versionString(bool checkGit = false);
+    if (checkGit) {
+#ifdef KRITA_GIT_SHA1_STRING
+        QString gitVersion(KRITA_GIT_SHA1_STRING);
+        version = QString("%1 (git %2)").arg(kritaVersion).arg(gitVersion).toLatin1();
+#endif
+    }
+    return version;
 }
 
-#endif // CALLIGRAVERSIONWRAPPER_H
