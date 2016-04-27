@@ -71,15 +71,13 @@ namespace {
         }
         QString translatedString = i18nc("action", s.toUtf8());
         if (translatedString == s) {
-            qDebug() << "Try again without the context, not all menu actions have context";
+            // Try again without the context, not all menu actions have context
             translatedString = i18n(s.toUtf8());
         }
         if (translatedString.isEmpty()) {
             dbgAction << "No translation found for" << s;
             return s;
         }
-        qDebug() <<  s << "translates to" << translatedString;
-
         return translatedString;
     };
 

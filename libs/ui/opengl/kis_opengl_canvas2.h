@@ -20,7 +20,11 @@
 #ifndef KIS_OPENGL_CANVAS_2_H
 #define KIS_OPENGL_CANVAS_2_H
 
+#ifdef Q_OS_MAC
+#include "paintengine/qopenglwidget.h"
+#else
 #include <QOpenGLWidget>
+#endif
 #include <QOpenGLFunctions>
 
 #include "canvas/kis_canvas_widget_base.h"
@@ -33,7 +37,7 @@ class KisCanvas2;
 class KisDisplayColorConverter;
 class QOpenGLShaderProgram;
 class QPainterPath;
-
+class QPainter;
 
 /**
  * KisOpenGLCanvas is the widget that shows the actual image using OpenGL
@@ -108,6 +112,7 @@ private:
     struct Private;
     Private * const d;
 
+    GLuint *vboHandles;
 };
 
 #endif // KIS_OPENGL_CANVAS_2_H

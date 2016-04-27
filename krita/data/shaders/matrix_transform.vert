@@ -1,4 +1,4 @@
-#version 130
+#version 330
 
 /*
  * Vertex shader for handling scaling

@@ -196,4 +196,3 @@ private:
 };
 
 #endif // KIS_OPENGL_IMAGE_TEXTURES_H_
-

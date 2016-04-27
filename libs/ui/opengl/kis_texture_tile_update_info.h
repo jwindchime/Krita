@@ -295,6 +295,5 @@ private:
     static ConversionCache m_conversionCache;
 };
 
-
 #endif /* KIS_TEXTURE_TILE_UPDATE_INFO_H_ */
 

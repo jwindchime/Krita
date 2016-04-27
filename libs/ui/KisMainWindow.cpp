@@ -127,6 +127,14 @@
 #include "KisPart.h"
 #include "KisPrintJob.h"
 #include "kis_resource_server_provider.h"
+#include "kis_animation_importer.h"
+#include "dialogs/kis_dlg_import_image_sequence.h"
+#include "kis_animation_exporter.h"
+#include "kis_icon_utils.h"
+#include <KisImportExportFilter.h>
+#include <KisDocument.h>
+#include "kis_signal_compressor_with_param.h"
+#include "dialogs/kis_delayed_save_dialog.h"
 #include "kis_signal_compressor_with_param.h"
 #include "KisView.h"
 #include "KisViewManager.h"

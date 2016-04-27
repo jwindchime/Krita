@@ -17,6 +17,11 @@ include_directories(SYSTEM
     ${Boost_INCLUDE_DIRS}
 )
 
+include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
+    ${Qt5Core_PRIVATE_INCLUDE_DIRS}
+    ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
+)
+
 add_subdirectory( tests )
 
 if (APPLE)
@@ -354,8 +359,33 @@ set(kritaui_LIB_SRCS
 
     KisPaletteModel.cpp
     KisColorsetChooser.cpp
+
+    kis_animation_frame_cache.cpp
+    kis_animation_cache_populator.cpp
+    canvas/kis_animation_player.cpp
+    kis_animation_exporter.cpp
+    kis_animation_importer.cpp
     KisSaveGroupVisitor.cpp
 )
+
+if(APPLE)
+    set(kritaui_LIB_SRCS
+        ${kritaui_LIB_SRCS}
+        opengl/paintengine/qopengl2pexvertexarray.cpp
+        opengl/paintengine/qopenglcustomshaderstage.cpp
+        opengl/paintengine/qopenglengineshadermanager.cpp
+        opengl/paintengine/qopenglgradientcache.cpp
+        opengl/paintengine/qopenglpaintengine.cpp
+        opengl/paintengine/qopengltextureblitter.cpp
+        opengl/paintengine/qopengltexturecache.cpp
+        opengl/paintengine/qopengltextureglyphcache.cpp
+        opengl/paintengine/qopengltexturehelper.cpp
+        opengl/paintengine/qtriangulatingstroker.cpp
+        opengl/paintengine/qtriangulator.cpp
+        opengl/paintengine/qopenglwidget.cpp
+        opengl/paintengine/qopenglpaintdevice.cpp
+    )
+endif()
 
 if(WIN32)
     if (NOT Qt5Gui_PRIVATE_INCLUDE_DIRS)
@@ -368,16 +398,9 @@ if(WIN32)
         input/wintab/kis_screen_size_choice_dialog.cpp
         qtlockedfile/qtlockedfile_win.cpp
         )
-      include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
+    include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 endif()
-    set(kritaui_LIB_SRCS
-        ${kritaui_LIB_SRCS}
-        kis_animation_frame_cache.cpp
-        kis_animation_cache_populator.cpp
-        canvas/kis_animation_player.cpp
-        kis_animation_exporter.cpp
-        kis_animation_importer.cpp
-    )
+      
 
 if(UNIX)
     set(kritaui_LIB_SRCS
@@ -493,19 +516,21 @@ if (NOT WIN32 AND NOT APPLE)
                                 ${XCB_LIBRARIES})
 endif()
 
-if(APPLE)
+if (APPLE)
     target_link_libraries(kritaui ${FOUNDATION_LIBRARY})
 endif ()
 
 
-target_link_libraries(kritaui ${OPENEXR_LIBRARIES})
+if (HAVE_OPENEXR)
+    target_link_libraries(kritaui ${OPENEXR_LIBRARIES})
+endif()
 
 # Add VSync disable workaround
-if(NOT WIN32 AND NOT APPLE)
+if (NOT WIN32 AND NOT APPLE)
     target_link_libraries(kritaui ${CMAKE_DL_LIBS} Qt5::X11Extras)
 endif()
 
-if(X11_FOUND)
+if (X11_FOUND)
     target_link_libraries(kritaui Qt5::X11Extras ${X11_LIBRARIES})
 endif()
 
