@@ -47,7 +47,7 @@ if (Threads_FOUND)
 endif()
 
 #OpenMP
-if(OPENMP_FOUND)
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8.3 AND OPENMP_FOUND)
     message("G'Mic: using OpenMP")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     add_definitions(-Dcimg_use_openmp)
@@ -121,7 +121,9 @@ if(CURL_FOUND)
     target_link_libraries(gmic ${CURL_LIBRARIES})
 endif()
 
-if(OPENMP_FOUND)
+# Only build gmic with gcc; msvc is broken, and now dtschump tells is that on OSX
+# gcc should be used as well because clang is broken.
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8.3 AND OPENMP_FOUND)
     target_link_libraries(gmic ${OPENMP_LIBRARIES})
 endif()
 
