@@ -47,7 +47,7 @@ if (Threads_FOUND)
 endif()
 
 #OpenMP
-if(OPENMP_FOUND)
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8.3 AND OPENMP_FOUND)
     message("G'Mic: using OpenMP")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     add_definitions(-Dcimg_use_openmp)
@@ -59,20 +59,20 @@ if(FFTW3_FOUND)
     message("G'Mic: using FFTW3")
     add_definitions(-Dcimg_use_fftw3 )
     add_definitions(-Dcimg_use_fftw3_singlethread )
-    include_directories(${FFTW3_INCLUDE_DIR})
+    include_directories(SYSTEM ${FFTW3_INCLUDE_DIR})
 endif()
 
 # PNG
 if (PNG_FOUND)
     add_definitions(${PNG_DEFINITIONS})
     add_definitions(-Dcimg_use_png)
-    include_directories(${PNG_INCLUDE_DIR})
+    include_directories(SYSTEM ${PNG_INCLUDE_DIR})
 endif()
 
 # ZLIB
 if (ZLIB_FOUND)
     add_definitions(-Dcimg_use_zlib)
-    include_directories( ${ZLIB_INCLUDE_DIRS} )
+    include_directories(SYSTEM ${ZLIB_INCLUDE_DIRS} )
 endif()
 
 
@@ -80,7 +80,7 @@ endif()
 if (CURL_FOUND)
     message("G'Mic: using Curl")
     add_definitions(-Dcimg_use_curl)
-    include_directories( ${CURL_INCLUDE_DIRS} )
+    include_directories(SYSTEM ${CURL_INCLUDE_DIRS} )
 endif()
 
 # X11
@@ -121,7 +121,9 @@ if(CURL_FOUND)
     target_link_libraries(gmic ${CURL_LIBRARIES})
 endif()
 
-if(OPENMP_FOUND)
+# Only build gmic with gcc; msvc is broken, and now dtschump tells is that on OSX
+# gcc should be used as well because clang is broken.
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8.3 AND OPENMP_FOUND)
     target_link_libraries(gmic ${OPENMP_LIBRARIES})
 endif()
 

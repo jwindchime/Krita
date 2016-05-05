@@ -25,6 +25,8 @@
 #include "kis_keyframe_channel.h"
 #include "kis_post_execution_undo_adapter.h"
 #include "kis_global.h"
+#include "kis_tool_utils.h"
+#include "kis_image_animation_interface.h"
 
 
 
@@ -37,16 +39,23 @@ namespace KisAnimationUtils {
     const QString dropFramesActionName = i18n("Drop Frames");
     const QString showLayerActionName = i18n("Show in Timeline");
 
+    const QString newLayerActionName = i18n("New Layer");
+    const QString addExistingLayerActionName = i18n("Add Existing Layer");
+    const QString removeLayerActionName = i18n("Remove Layer");
+
 
     bool createKeyframeLazy(KisImageSP image, KisNodeSP node, int time, bool copy) {
         KisKeyframeChannel *content =
             node->getKeyframeChannel(KisKeyframeChannel::Content.id());
+        bool newContent = false;
 
         if (!content) {
             node->enableAnimation();
             content =
                 node->getKeyframeChannel(KisKeyframeChannel::Content.id());
             if (!content) return false;
+
+            newContent = true;
         }
 
         if (copy) {
@@ -58,8 +67,19 @@ namespace KisAnimationUtils {
             content->copyKeyframe(srcFrame, time, cmd);
             image->postExecutionUndoAdapter()->addCommand(toQShared(cmd));
         } else {
-            if (content->keyframeAt(time)) return false;
+            if (content->keyframeAt(time)) {
 
+                if (newContent) return false;
+
+                if (image->animationInterface()->currentTime() == time) {
+                    //shortcut: clearing the image instead
+
+                    if (KisToolUtils::clearImage(image, node, 0)) {
+                        return true;
+                    }
+                }
+                //fallback: erasing the keyframe and creating it again
+            }
             KUndo2Command *cmd = new KUndo2Command(kundo2_i18n("Add Keyframe"));
             content->addKeyframe(time, cmd);
             image->postExecutionUndoAdapter()->addCommand(toQShared(cmd));

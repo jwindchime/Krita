@@ -162,9 +162,12 @@ void ThemeManager::slotChangePalette()
 
     QString theme(currentThemeName());
 
+    // Windows doesn't do well with KDE theming
+    #if defined (Q_OS_LINUX) || defined (__APPLE__)
     if (theme == defaultThemeName() || theme.isEmpty()) {
         theme = currentKDEdefaultTheme();
     }
+    #endif
 
     QString filename        = d->themeMap.value(theme);
     KSharedConfigPtr config = KSharedConfig::openConfig(filename);
@@ -246,11 +249,9 @@ void ThemeManager::populateThemeMenu()
     connect(d->themeMenuActionGroup, SIGNAL(triggered(QAction*)),
             this, SLOT(slotChangePalette()));
 
-    QAction * action = new QAction(defaultThemeName(), d->themeMenuActionGroup);
-    action->setCheckable(true);
-    d->themeMenuAction->addAction(action);
 
-    const QStringList schemeFiles = KoResourcePaths::findAllResources("data", "color-schemes/*.colors", KoResourcePaths::NoDuplicates);
+    QAction * action;
+    const QStringList schemeFiles = KoResourcePaths::findAllResources("data", "color-schemes/*.colors");
 
     QMap<QString, QAction*> actionMap;
     for (int i = 0; i < schemeFiles.size(); ++i)
@@ -273,6 +274,10 @@ void ThemeManager::populateThemeMenu()
 
     Q_FOREACH (const QString& name, actionMapKeys)
     {
+        if ( name ==  currentThemeName()) {
+            actionMap.value(name)->setChecked(true);
+        }
+
         d->themeMenuAction->addAction(actionMap.value(name));
     }
 
@@ -346,7 +351,7 @@ QString ThemeManager::currentKDEdefaultTheme() const
 
 void ThemeManager::populateThemeMap()
 {
-    const QStringList schemeFiles = KoResourcePaths::findAllResources("data", "color-schemes/*.colors", KoResourcePaths::NoDuplicates);
+    const QStringList schemeFiles = KoResourcePaths::findAllResources("data", "color-schemes/*.colors");
     for (int i = 0; i < schemeFiles.size(); ++i)
     {
         const QString filename  = schemeFiles.at(i);

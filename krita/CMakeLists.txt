@@ -1,6 +1,6 @@
 project(krita)
 
-include_directories(
+include_directories(SYSTEM
     ${EIGEN3_INCLUDE_DIR}
     ${Vc_INCLUDE_DIR}
 )
@@ -17,15 +17,20 @@ endif ()
 
 set(krita_SRCS main.cc)
 
-set(ICON_SRCS
-     "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/16-apps-calligrakrita.png"
-     "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/32-apps-calligrakrita.png"
-     "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/48-apps-calligrakrita.png"
-     "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/128-apps-calligrakrita.png"
-     "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/256-apps-calligrakrita.png"
-     "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/512-apps-calligrakrita.png"
-     "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/1024-apps-calligrakrita.png"
-)
+if (NOT APPLE)
+    file(GLOB ICON_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/*-apps-calligrakrita.png")
+else()
+    set(ICON_SRCS
+         "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/16-apps-calligrakrita.png"
+         "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/32-apps-calligrakrita.png"
+         "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/48-apps-calligrakrita.png"
+         "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/128-apps-calligrakrita.png"
+         "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/256-apps-calligrakrita.png"
+         "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/512-apps-calligrakrita.png"
+         "${CMAKE_CURRENT_SOURCE_DIR}/pics/app/1024-apps-calligrakrita.png"
+    )
+endif() 
+ecm_add_app_icon(krita_SRCS ICONS ${ICON_SRCS})
 
 if(WIN32 AND USE_BREAKPAD)
     set(krita_SRCS ${krita_SRCS} kis_crash_handler.cpp)
@@ -35,7 +40,6 @@ if(WIN32 AND USE_BREAKPAD)
     endif()
 endif()
 
-ecm_add_app_icon(krita_SRCS ICONS ${ICON_SRCS})
 
 # separate listing, both used by Krita and KritaSketch
 set(krita_QRCS

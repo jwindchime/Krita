@@ -92,16 +92,16 @@ QDomElement KisKraSaver::saveXML(QDomDocument& doc,  KisImageWSP image)
     Q_ASSERT(image);
     imageElement.setAttribute(NAME, m_d->imageName);
     imageElement.setAttribute(MIME, NATIVE_MIMETYPE);
-    imageElement.setAttribute(WIDTH, image->width());
-    imageElement.setAttribute(HEIGHT, image->height());
+    imageElement.setAttribute(WIDTH, KisDomUtils::toString(image->width()));
+    imageElement.setAttribute(HEIGHT, KisDomUtils::toString(image->height()));
     imageElement.setAttribute(COLORSPACE_NAME, image->colorSpace()->id());
     imageElement.setAttribute(DESCRIPTION, m_d->doc->documentInfo()->aboutInfo("comment"));
     // XXX: Save profile as blob inside the image, instead of the product name.
     if (image->profile() && image->profile()-> valid()) {
         imageElement.setAttribute(PROFILE, image->profile()->name());
     }
-    imageElement.setAttribute(X_RESOLUTION, image->xRes()*72.0);
-    imageElement.setAttribute(Y_RESOLUTION, image->yRes()*72.0);
+    imageElement.setAttribute(X_RESOLUTION, KisDomUtils::toString(image->xRes()*72.0));
+    imageElement.setAttribute(Y_RESOLUTION, KisDomUtils::toString(image->yRes()*72.0));
 
     quint32 count = 1; // We don't save the root layer, but it does count
     KisSaveXmlVisitor visitor(doc, imageElement, count, m_d->doc->url().toLocalFile(), true);
@@ -290,10 +290,10 @@ bool KisKraSaver::saveAssistants(KoStore* store, QString uri, bool external)
     QString location;
     QMap<QString, int> assistantcounters;
     QByteArray data;
-    QList<KisPaintingAssistant*> assistants =  m_d->doc->assistants();
+    QList<KisPaintingAssistantSP> assistants =  m_d->doc->assistants();
     QMap<KisPaintingAssistantHandleSP, int> handlemap;
     if (!assistants.isEmpty()) {
-        Q_FOREACH (KisPaintingAssistant* assist, assistants){
+        Q_FOREACH (KisPaintingAssistantSP assist, assistants){
             if (!assistantcounters.contains(assist->id())){
                 assistantcounters.insert(assist->id(),0);
             }
@@ -314,10 +314,10 @@ bool KisKraSaver::saveAssistants(KoStore* store, QString uri, bool external)
 bool KisKraSaver::saveAssistantsList(QDomDocument& doc, QDomElement& element)
 {
     int count_ellipse = 0, count_perspective = 0, count_ruler = 0, count_vanishingpoint = 0,count_infiniteruler = 0, count_parallelruler = 0, count_concentricellipse = 0, count_fisheyepoint = 0, count_spline = 0;
-    QList<KisPaintingAssistant*> assistants =  m_d->doc->assistants();
+    QList<KisPaintingAssistantSP> assistants =  m_d->doc->assistants();
     if (!assistants.isEmpty()) {
         QDomElement assistantsElement = doc.createElement("assistants");
-        Q_FOREACH (KisPaintingAssistant* assist, assistants){
+        Q_FOREACH (KisPaintingAssistantSP assist, assistants){
             if (assist->id() == "ellipse"){
                 assist->saveXmlList(doc, assistantsElement, count_ellipse);
                 count_ellipse++;

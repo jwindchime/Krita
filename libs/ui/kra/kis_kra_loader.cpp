@@ -124,7 +124,7 @@ public:
     int syntaxVersion; // version of the fileformat we are loading
     vKisNodeSP selectedNodes; // the nodes that were active when saving the document.
     QMap<QString, QString> assistantsFilenames;
-    QList<KisPaintingAssistant*> assistants;
+    QList<KisPaintingAssistantSP> assistants;
     QMap<KisNode*, QString> keyframeFilenames;
     QStringList errorMessages;
 };
@@ -206,28 +206,31 @@ KisImageWSP KisKraLoader::loadXML(const KoXmlElement& element)
             m_d->errorMessages << i18n("Image does not specify a width.");
             return KisImageWSP(0);
         }
-        width = attr.toInt();
+        width = KisDomUtils::toInt(attr);
 
         if ((attr = element.attribute(HEIGHT)).isNull()) {
             m_d->errorMessages << i18n("Image does not specify a height.");
             return KisImageWSP(0);
         }
 
-        height = attr.toInt();
+        height = KisDomUtils::toInt(attr);
 
         m_d->imageComment = element.attribute(DESCRIPTION);
 
         xres = 100.0 / 72.0;
         if (!(attr = element.attribute(X_RESOLUTION)).isNull()) {
-            if (attr.toDouble() > 1.0) {
-                xres = attr.toDouble() / 72.0;
+            qreal value = KisDomUtils::toDouble(attr);
+
+            if (value > 1.0) {
+                xres = value / 72.0;
             }
         }
 
         yres = 100.0 / 72.0;
         if (!(attr = element.attribute(Y_RESOLUTION)).isNull()) {
-            if (attr.toDouble() > 1.0) {
-                yres = attr.toDouble() / 72.0;
+            qreal value = KisDomUtils::toDouble(attr);
+            if (value > 1.0) {
+                yres = value / 72.0;
             }
         }
 
@@ -464,7 +467,7 @@ vKisNodeSP KisKraLoader::selectedNodes() const
     return m_d->selectedNodes;
 }
 
-QList<KisPaintingAssistant *> KisKraLoader::assistants() const
+QList<KisPaintingAssistantSP> KisKraLoader::assistants() const
 {
     return m_d->assistants;
 }
@@ -491,7 +494,7 @@ void KisKraLoader::loadAssistants(KoStore *store, const QString &uri, bool exter
             assistant->loadXml(store, handleMap, file_path);
             //If an assistant has too few handles than it should according to it's own setup, just don't load it//
             if (assistant->handles().size()==assistant->numHandles()){
-                m_d->assistants.append(assistant);
+                m_d->assistants.append(toQShared(assistant));
             }
         }
         loadedAssistant++;

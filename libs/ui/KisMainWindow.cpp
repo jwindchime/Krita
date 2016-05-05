@@ -199,7 +199,6 @@ public:
         , windowMenu(new KActionMenu(i18nc("@action:inmenu", "&Window"), parent))
         , documentMenu(new KActionMenu(i18nc("@action:inmenu", "New &View"), parent))
         , helpMenu(0)
-        , brushesAndStuff(0)
         , recentFiles(0)
         , toolOptionsDocker(0)
         , deferredClosingEvent(0)
@@ -264,8 +263,6 @@ public:
     KActionMenu *documentMenu;
 
     KHelpMenu *helpMenu;
-
-    KToolBar *brushesAndStuff;
 
     KRecentFilesAction *recentFiles;
 
@@ -334,8 +331,6 @@ KisMainWindow::KisMainWindow()
     connect(KisConfigNotifier::instance(), SIGNAL(configChanged()), this, SLOT(configChanged()));
 
     actionCollection()->addAssociatedWidget(this);
-
-    QMetaObject::invokeMethod(this, "initializeGeometry", Qt::QueuedConnection);
 
     KoToolBoxFactory toolBoxFactory;
     QDockWidget *toolbox = createDockWidget(&toolBoxFactory);
@@ -587,6 +582,30 @@ void KisMainWindow::showView(KisView *imageView)
         subwin->setOption(QMdiSubWindow::RubberBandResize, cfg.readEntry<int>("mdi_rubberband", cfg.useOpenGL()));
         subwin->setWindowIcon(qApp->windowIcon());
 
+        setActiveView(imageView);
+
+        /**
+         * Hack alert!
+         *
+         * Here we explicitly request KoToolManager to emit all the tool
+         * activation signals, to reinitialize the tool options docker.
+         *
+         * That is needed due to a design flaw we have in the
+         * initialization procedure.  The tool in the KoToolManager is
+         * initialized in KisView::setViewManager() calls, which
+         * happens early enough. During this call the tool manager
+         * requests KoCanvasControllerWidget to emit the signal to
+         * update the widgets in the tool docker. *But* at that moment
+         * of time the view is not yet connected to the main window,
+         * because it happens in KisViewManager::setCurrentView a bit
+         * later. This fact makes the widgets updating signals be lost
+         * and never reach the tool docker.
+         *
+         * So here we just explicitly call the tool activation stub.
+         */
+
+        KoToolManager::instance()->initializeCurrentToolForCanvas();
+
         if (d->mdiArea->subWindowList().size() == 1) {
             imageView->showMaximized();
         }
@@ -594,7 +613,6 @@ void KisMainWindow::showView(KisView *imageView)
             imageView->show();
         }
 
-        setActiveView(imageView);
         updateWindowMenu();
         updateCaption();
     }
@@ -1202,6 +1220,11 @@ void KisMainWindow::saveWindowSettings()
                 dockGroup.writeEntry("Collapsed", i.value()->widget()->isHidden());
                 dockGroup.writeEntry("Locked", i.value()->property("Locked").toBool());
                 dockGroup.writeEntry("DockArea", (int) dockWidgetArea(i.value()));
+                dockGroup.writeEntry("xPosition", (int) i.value()->widget()->x());
+                dockGroup.writeEntry("yPosition", (int) i.value()->widget()->y());
+
+                dockGroup.writeEntry("width", (int) i.value()->widget()->width());
+                dockGroup.writeEntry("height", (int) i.value()->widget()->height());
             }
         }
 

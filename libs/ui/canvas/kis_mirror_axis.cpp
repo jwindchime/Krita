@@ -107,13 +107,6 @@ KisMirrorAxis::KisMirrorAxis(KisCanvasResourceProvider* provider, QPointer<KisVi
     int imageHeight = parent->canvasBase()->image()->height();
     QPointF point(imageWidth / 2, imageHeight / 2);
     d->resourceProvider->resourceManager()->setResource(KisCanvasResourceProvider::MirrorAxesCenter, point);
-
-    parent->installEventFilter(this);
-
-    KisInputManager *inputManager = parent->canvasBase()->globalInputManager();
-    if (inputManager) {
-        inputManager->attachPriorityEventFilter(this);
-    }
 }
 
 KisMirrorAxis::~KisMirrorAxis()
@@ -222,16 +215,26 @@ void KisMirrorAxis::drawDecoration(QPainter& gc, const QRectF& updateArea, const
 
 bool KisMirrorAxis::eventFilter(QObject* target, QEvent* event)
 {
+    if (!visible()) return false;
+
+    QObject *expectedCanvasWidget = view() ?
+        view()->canvasBase()->canvasWidget() : 0;
+
+    if (!expectedCanvasWidget || target != expectedCanvasWidget) return false;
+
     if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::TabletPress) {
-        QMouseEvent* me = static_cast<QMouseEvent*>(event);
-        if(d->mirrorHorizontal && d->horizontalHandle.contains(me->posF())) {
+        QMouseEvent *me = dynamic_cast<QMouseEvent*>(event);
+        QTabletEvent *te = dynamic_cast<QTabletEvent*>(event);
+        QPoint pos = me ? me->pos() : (te ? te->pos() : QPoint(77,77));
+
+        if(d->mirrorHorizontal && d->horizontalHandle.contains(pos)) {
             d->xActive = true;
             QApplication::setOverrideCursor(Qt::ClosedHandCursor);
             event->accept();
             return true;
         }
 
-        if(d->mirrorVertical && d->verticalHandle.contains(me->posF())) {
+        if(d->mirrorVertical && d->verticalHandle.contains(pos)) {
             d->yActive = true;
             QApplication::setOverrideCursor(Qt::ClosedHandCursor);
             event->accept();
@@ -239,27 +242,31 @@ bool KisMirrorAxis::eventFilter(QObject* target, QEvent* event)
         }
     }
     if(event->type() == QEvent::MouseMove || event->type() == QEvent::TabletMove) {
-        QMouseEvent* me = static_cast<QMouseEvent*>(event);
+        QMouseEvent *me = dynamic_cast<QMouseEvent*>(event);
+        QTabletEvent *te = dynamic_cast<QTabletEvent*>(event);
+
+        QPoint pos = me ? me->pos() : (te ? te->pos() : QPoint(77,77));
+
         if(d->xActive) {
-            float axisX = view()->viewConverter()->widgetToImage<QPoint>(me->pos()).x();
+            float axisX = view()->viewConverter()->widgetToImage<QPoint>(pos).x();
 
             d->setAxisPosition(axisX, d->axisPosition.y());
-            d->horizontalHandlePosition = KisAlgebra2D::dotProduct<QPointF>(me->pos() - d->horizontalAxis.p1(), d->horizontalAxis.unitVector().p2() - d->horizontalAxis.p1());
+            d->horizontalHandlePosition = KisAlgebra2D::dotProduct<QPointF>(pos - d->horizontalAxis.p1(), d->horizontalAxis.unitVector().p2() - d->horizontalAxis.p1());
 
             event->accept();
             return true;
         }
         if(d->yActive) {
-            float axisY = view()->viewConverter()->widgetToImage<QPoint>(me->pos()).y();
+            float axisY = view()->viewConverter()->widgetToImage<QPoint>(pos).y();
 
             d->setAxisPosition(d->axisPosition.x(), axisY);
-            d->verticalHandlePosition = KisAlgebra2D::dotProduct<QPointF>(me->pos() - d->verticalAxis.p1(), d->verticalAxis.unitVector().p2() - d->verticalAxis.p1());
+            d->verticalHandlePosition = KisAlgebra2D::dotProduct<QPointF>(pos - d->verticalAxis.p1(), d->verticalAxis.unitVector().p2() - d->verticalAxis.p1());
 
             event->accept();
             return true;
         }
         if(d->mirrorHorizontal) {
-            if(d->horizontalHandle.contains(me->posF())) {
+            if(d->horizontalHandle.contains(pos)) {
                 if(!d->horizontalContainsCursor) {
                     QApplication::setOverrideCursor(Qt::OpenHandCursor);
                     d->horizontalContainsCursor = true;
@@ -270,7 +277,7 @@ bool KisMirrorAxis::eventFilter(QObject* target, QEvent* event)
             }
         }
         if(d->mirrorVertical) {
-            if(d->verticalHandle.contains(me->posF())) {
+            if(d->verticalHandle.contains(pos)) {
                 if(!d->verticalContainsCursor) {
                     QApplication::setOverrideCursor(Qt::OpenHandCursor);
                     d->verticalContainsCursor = true;
@@ -305,6 +312,21 @@ void KisMirrorAxis::mirrorModeChanged()
     d->mirrorHorizontal = d->resourceProvider->mirrorHorizontal();
     d->mirrorVertical = d->resourceProvider->mirrorVertical();
     setVisible(d->mirrorHorizontal || d->mirrorVertical);
+}
+
+void KisMirrorAxis::setVisible(bool v)
+{
+    KisCanvasDecoration::setVisible(v);
+
+
+    KisInputManager *inputManager = view() ? view()->canvasBase()->globalInputManager() : 0;
+    if (!inputManager) return;
+
+    if (v) {
+        inputManager->attachPriorityEventFilter(this);
+    } else {
+        inputManager->detachPriorityEventFilter(this);
+    }
 }
 
 void KisMirrorAxis::Private::setAxisPosition(float x, float y)

@@ -222,8 +222,7 @@ void KisShortcutsEditor::exportConfiguration(KConfigBase *config) const
     }
 
     if (d->actionTypes) {
-        QString groupName(QStringLiteral("Shortcuts"));
-        KConfigGroup group(config, groupName);
+        KConfigGroup group(config,QStringLiteral("Shortcuts"));
         foreach (KActionCollection *collection, d->actionCollections) {
             collection->writeSettings(&group, true);
         }
@@ -295,6 +294,17 @@ void KisShortcutsEditor::allDefault()
 void KisShortcutsEditor::printShortcuts() const
 {
     d->printShortcuts();
+}
+
+void KisShortcutsEditor::searchUpdated(QString s)
+{
+    if (s.isEmpty()) {
+        // Reset the tree area
+        d->ui.list->collapseAll();
+        d->ui.list->expandToDepth(0);
+    } else {
+        d->ui.list->expandAll();
+    }
 }
 
 KisShortcutsEditor::ActionTypes KisShortcutsEditor::actionTypes() const

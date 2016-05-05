@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Halt on errors
-#set -e
+set -e
 
 # Be verbose
 set -x
@@ -12,7 +12,7 @@ APP=krita
 
 cd $BUILDROOT
 
-VER=$(grep "#define KRITA_VERSION_STRING" /build/libs/version/kritaversion.h | cut -d '"' -f 2)
+VER=$(grep "#define KRITA_VERSION_STRING" $BUILDROOT/build/libs/version/kritaversion.h | cut -d '"' -f 2)
 cd $BUILDROOT/krita
 BRANCH=$( git branch | cut -d ' ' -f 2)
 REVISION=$(git rev-parse --short HEAD)
@@ -23,9 +23,8 @@ echo $VERSION
 
 PACKAGENAME=$APP"-"$VERSION"-x64"
 
-#rm -rf $BUILDROOT/out/* || true
 mkdir -p $BUILDROOT/out/$PACKAGENAME
-mkdir -p $BUILDROOT/out/$PACKAGENAME/bin
+mkdir -p $BUILDROOT/out/$PACKAGENAME/bin/data
 mkdir -p $BUILDROOT/out/$PACKAGENAME/lib
 mkdir -p $BUILDROOT/out/$PACKAGENAME/share
 
@@ -63,24 +62,22 @@ cp -r $MXEROOT/share/color $BUILDROOT/out/$PACKAGENAME/share
 cp -r $MXEROOT/share/color-schemes $BUILDROOT/out/$PACKAGENAME/share
 cp -r $MXEROOT/share/kf5 $BUILDROOT/out/$PACKAGENAME/share
 cp -r $MXEROOT/share/krita $BUILDROOT/out/$PACKAGENAME/share
-cp -r $MXEROOT/share/locale $BUILDROOT/out/$PACKAGENAME/share
+cp -r $MXEROOT/share/locale $BUILDROOT/out/$PACKAGENAME/bin/data
 cp -r $MXEROOT/share/mime $BUILDROOT/out/$PACKAGENAME/share
 cp -r $MXEROOT/share/ocio $BUILDROOT/out/$PACKAGENAME/share
 
+cd $BUILDROOT
 rm krita-3.0-l10n-win-current.tar.gz || true
 rm -rf locale
 
-wget http://nonaynever.ru/pub/l10n-win/krita-3.0-l10n-win-current.tar.gz
+wget http://files.kde.org/krita/build/krita-3.0-l10n-win-current.tar.gz
 tar -xf krita-3.0-l10n-win-current.tar.gz
-mkdir $BUILDROOT/out/$PACKAGENAME/bin/data
 cp -r $BUILDROOT/locale $BUILDROOT/out/$PACKAGENAME/bin/data
 
 cd $BUILDROOT/out/
 
 zip -r $PACKAGENAME-dbg.zip $PACKAGENAME
 sha1sum $PACKAGENAME-dbg.zip > $PACKAGENAME-dbg.sha1
-
-exit 0 
 
 find $BUILDROOT/out/$PACKAGENAME/bin -name \*exe | xargs $BUILDROOT/mxe/usr/bin/x86_64-w64-mingw32.shared-strip
 find $BUILDROOT/out/$PACKAGENAME/bin -name \*dll | xargs $BUILDROOT/mxe/usr/bin/x86_64-w64-mingw32.shared-strip

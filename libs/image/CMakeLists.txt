@@ -17,17 +17,19 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/recorder
 
     ${CMAKE_SOURCE_DIR}/sdk/tests
-    
+)
+
+include_directories(SYSTEM
     ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
 )
 
 if(FFTW3_FOUND)
-  include_directories(${FFTW3_INCLUDE_DIR})
+  include_directories(SYSTEM ${FFTW3_INCLUDE_DIR})
 endif()
 
 if(HAVE_VC)
-  include_directories(${Vc_INCLUDE_DIR} ${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS})
+  include_directories(SYSTEM ${Vc_INCLUDE_DIR} ${Qt5Core_INCLUDE_DIRS} ${Qt5Gui_INCLUDE_DIRS})
   ko_compile_for_all_implementations(__per_arch_circle_mask_generator_objs kis_brush_mask_applicator_factories.cpp)
 else()
   set(__per_arch_circle_mask_generator_objs kis_brush_mask_applicator_factories.cpp)
@@ -178,6 +180,7 @@ set(kritaimage_LIB_SRCS
    kis_signal_compressor_with_param.cpp
    kis_thread_safe_signal_compressor.cpp
    kis_acyclic_signal_connector.cpp
+   kis_timed_signal_threshold.cpp
    kis_layer.cc
    kis_indirect_painting_support.cpp
    kis_abstract_projection_plane.cpp
