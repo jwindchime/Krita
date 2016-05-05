@@ -199,7 +199,6 @@ public:
         , windowMenu(new KActionMenu(i18nc("@action:inmenu", "&Window"), parent))
         , documentMenu(new KActionMenu(i18nc("@action:inmenu", "New &View"), parent))
         , helpMenu(0)
-        , brushesAndStuff(0)
         , recentFiles(0)
         , toolOptionsDocker(0)
         , deferredClosingEvent(0)
@@ -264,8 +263,6 @@ public:
     KActionMenu *documentMenu;
 
     KHelpMenu *helpMenu;
-
-    KToolBar *brushesAndStuff;
 
     KRecentFilesAction *recentFiles;
 
