@@ -53,6 +53,7 @@ ExternalProject_Add(
     DOWNLOAD_DIR ${EXTERNALS_DOWNLOAD_DIR}
     URL http://files.kde.org/krita/build/dependencies/kconfig-5.17.0.zip
     URL_MD5 f321e98ce591fdb3632e04c770a5b0c6
+    PATCH_COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/kconfig.diff
     INSTALL_DIR ${EXTPREFIX_frameworks}
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTPREFIX_frameworks}
             -DCMAKE_BUILD_TYPE=${GLOBAL_BUILD_TYPE} 
@@ -142,6 +143,7 @@ ExternalProject_Add(
     URL_MD5 7d60380d09f98defbf878ea9daba0fbb
     INSTALL_DIR ${EXTPREFIX_frameworks}
     PATCH_COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/ki18n.diff
+          COMMAND ${PATCH_COMMAND} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/ki18n-appdatalocation.diff
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTPREFIX_frameworks}
             -DCMAKE_BUILD_TYPE=${GLOBAL_BUILD_TYPE} 
                 ${GLOBAL_PROFILE}

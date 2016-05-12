@@ -55,7 +55,7 @@ qreal KisDynamicSensorDrawingAngle::value(const KisPaintInformation& info)
     if (!info.isHoveringMode() && m_lockedAngleMode) {
         if (!m_dabIndex) {
             info.lockCurrentDrawingAngle(1.0);
-        } else if (m_dabIndex < 3) {
+        } else {
             info.lockCurrentDrawingAngle(0.5);
         }
         m_dabIndex++;
@@ -82,6 +82,7 @@ QWidget* KisDynamicSensorDrawingAngle::createConfigurationWidget(QWidget* parent
     QWidget *w = new QWidget(parent);
 
     m_chkLockedMode = new QCheckBox(i18n("Lock"), w);
+    m_chkLockedMode->setChecked(m_lockedAngleMode);
 
     connect(m_chkLockedMode, SIGNAL(stateChanged(int)), SLOT(setLockedAngleMode(int)));
     connect(m_chkLockedMode, SIGNAL(stateChanged(int)), SLOT(updateGUI()));
