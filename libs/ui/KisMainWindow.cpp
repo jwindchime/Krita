@@ -208,6 +208,7 @@ public:
         , windowMapper(new QSignalMapper(parent))
         , documentMapper(new QSignalMapper(parent))
         , lastExportSpecialOutputFlag(0)
+        , geometryInitialized(false)
     {
     }
 
@@ -285,6 +286,7 @@ public:
     QByteArray lastExportedFormat;
     int lastExportSpecialOutputFlag;
     QScopedPointer<KisSignalCompressorWithParam<int> > tabSwitchCompressor;
+    bool geometryInitialized;
 
     KisActionManager * actionManager() {
         return viewManager->actionManager();
@@ -1140,6 +1142,26 @@ void KisMainWindow::redo()
     if (activeView()) {
         activeView()->redoAction()->trigger();
         d->redo->setText(activeView()->redoAction()->text());
+    }
+}
+
+void KisMainWindow::showEvent(QShowEvent *e)
+{
+    KXmlGuiWindow::showEvent(e);
+
+    if (!d->geometryInitialized) {
+        /**
+         * We should move the window only *after* it has been shown on
+         * screen, otherwise it will become owned by a wrong screen, which
+         * will make positioning of all the child widgets wrong.
+         * (see bug https://bugs.kde.org/show_bug.cgi?id=362025)
+         *
+         * This is actually a bug/feature of Qt 5.5.x and it has been
+         * fixed in Qt 5.6.0. So we can avoid this delay on newer versions
+         * of Qt.
+         */
+        QTimer::singleShot(1, this, SLOT(initializeGeometry()));
+        d->geometryInitialized = true;
     }
 }
 
