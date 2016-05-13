@@ -154,7 +154,7 @@ bool KMWSessionManager::saveState(QSessionManager &)
     config->sync();
 
     // generate discard command for new file
-    QString localFilePath =  QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QLatin1Char('/') + config->name();
+    QString localFilePath =  QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + QLatin1Char('/') + config->name();
     if (QFile::exists(localFilePath)) {
         QStringList discard;
         discard << QLatin1String("rm");

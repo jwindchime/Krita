@@ -346,7 +346,9 @@ QStringList KoResourcePaths::findDirsInternal(const QString &type, const QString
     {
         QStringList bundlePaths;
         bundlePaths << getApplicationRoot() + "/share/" + relDir;
+        bundlePaths << getApplicationRoot() + "/share/krita/" + relDir;
         bundlePaths << getApplicationRoot() + "/../share/" + relDir;
+        bundlePaths << getApplicationRoot() + "/../share/krita/" + relDir;
         appendResources(&dirs, bundlePaths, true);
     }
 #endif

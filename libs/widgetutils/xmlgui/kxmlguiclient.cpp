@@ -201,7 +201,7 @@ void KXMLGUIClient::setComponentName(const QString &componentName, const QString
 
 QString KXMLGUIClient::standardsXmlFileLocation()
 {
-    QString file = QStandardPaths::locate(QStandardPaths::GenericConfigLocation, QStringLiteral("ui/ui_standards.xmlgui"));
+    QString file = QStandardPaths::locate(QStandardPaths::AppConfigLocation, QStringLiteral("ui/ui_standards.xmlgui"));
     if (file.isEmpty()) {
         // fallback to resource, to allow to use the rc file compiled into this framework, must exist!
         file = QStringLiteral(":/kxmlgui5/ui_standards.xmlgui");

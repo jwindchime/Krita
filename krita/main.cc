@@ -123,7 +123,7 @@ extern "C" int main(int argc, char **argv)
     // Now that the paths are set, set the language. First check the override from the langage
     // selection dialog.
     KLocalizedString::clearLanguages();
-    const QString configPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+    const QString configPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     QSettings languageoverride(configPath + QStringLiteral("/klanguageoverridesrc"), QSettings::IniFormat);
     languageoverride.beginGroup(QStringLiteral("Language"));
     QString language = languageoverride.value(qAppName(), "").toString();
