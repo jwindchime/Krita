@@ -43,68 +43,31 @@ namespace
     QString Renderer;
 }
 
-class TestWindow : public QWindow {
-public:
-    TestWindow(QScreen *screen = 0)
-        : QWindow(screen)
-    {
-        QOpenGLContext *context = 0;
-        QSurfaceFormat format;
+void  openGLInfo()
+{
+   // we need a QSurface active to get our GL functions from the context
+   QWindow  surface;
+   surface.setSurfaceType( QSurface::OpenGLSurface );
+   surface.create();
 
-        // 3.2 Compatibility
-        format.setMajorVersion( 3 );
-        format.setMinorVersion( 2 );
-        format.setProfile( QSurfaceFormat::CoreProfile );
-        setFormat( format );
-        // Create an OpenGL context
-        context = new QOpenGLContext;
-        context->setFormat( format );
-        context->create();
-        context->makeCurrent(this);
-        QOpenGLFunctions_3_2_Core *f0 = context->versionFunctions<QOpenGLFunctions_3_2_Core>();
-        version32Core = f0;
-        delete context;
+   QOpenGLContext context;
+   context.create();
+   context.makeCurrent( &surface );
 
-        // 3.2 Core
-        format.setProfile( QSurfaceFormat::CompatibilityProfile );
-        setFormat( format );
-        // Create an OpenGL context
-        context = new QOpenGLContext;
-        context->setFormat( format );
-        context->create();
-        context->makeCurrent(this);
-        QOpenGLFunctions_3_2_Compatibility *f1 = context->versionFunctions<QOpenGLFunctions_3_2_Compatibility>();
-        version32Compatibility = f1;
-        delete context;
+   QOpenGLFunctions  *funcs = context.functions();
+   funcs->initializeOpenGLFunctions();
 
-        // 2.1
-        format.setMajorVersion( 3 );
-        format.setMinorVersion( 2 );
-        setFormat( format );
-        // Create an OpenGL context
-        context = new QOpenGLContext;
-        context->setFormat( format );
-        context->create();
-        context->makeCurrent(this);
-        QOpenGLFunctions_2_1 *f2 = context->versionFunctions<QOpenGLFunctions_2_1>();
-        version32Core = f2;
-        delete context;
-
-    }
-
-    bool version32Core;
-    bool version32Compatibility;
-    bool version21;
-};
-
+   qDebug() << "OpenGL Info";
+   qDebug() << "  Vendor: " << reinterpret_cast<const char *>(funcs->glGetString( GL_VENDOR ));
+   qDebug() << "  Renderer: " << reinterpret_cast<const char *>(funcs->glGetString( GL_RENDERER ));
+   qDebug() << "  Version: " << reinterpret_cast<const char *>(funcs->glGetString( GL_VERSION ));
+   qDebug() << "  Shading language: " << reinterpret_cast<const char *>(funcs->glGetString( GL_SHADING_LANGUAGE_VERSION ));
+   qDebug() << "  Requested format: " << QSurfaceFormat::defaultFormat();
+   qDebug() << "  Current format:   " << context.format();
+}
 
 void KisOpenGL::initialize()
 {
-    {
-        TestWindow w;
-        qDebug() << "3.2 core" << w.version32Core << "3.2 compatibility" << w.version32Compatibility << "2.1" << w.version21;
-    }
-
     QSurfaceFormat format;
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setOptions(QSurfaceFormat::DeprecatedFunctions);
@@ -116,9 +79,7 @@ void KisOpenGL::initialize()
 
     QSurfaceFormat::setDefaultFormat(format);
 
-    glVersion = 100 * QSurfaceFormat::defaultFormat().majorVersion() + QSurfaceFormat::defaultFormat().minorVersion();
-    dbgOpenGL << "GL Version:" << glVersion << QSurfaceFormat::defaultFormat().swapInterval() << QSurfaceFormat::defaultFormat().swapBehavior();
-
+    openGLInfo();
 }
 
 int KisOpenGL::initializeContext(QOpenGLContext* ctx) {
