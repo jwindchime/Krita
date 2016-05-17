@@ -92,12 +92,18 @@ void KisEqualizerWidget::setValues(const EqualizerValues &v)
 {
     for (int i = -m_d->maxDistance; i <= m_d->maxDistance; i++) {
         if (qAbs(i) <= v.maxDistance) {
-            m_d->columns[i]->setState(v.state[i]);
             m_d->columns[i]->setValue(v.value[i]);
+            m_d->columns[i]->setState(v.state[i]);
         } else {
             m_d->columns[i]->setState(false);
         }
     }
+}
+
+void KisEqualizerWidget::toggleMasterSwitch()
+{
+    const bool currentState = m_d->columns[0]->state();
+    m_d->columns[0]->setState(!currentState);
 }
 
 void KisEqualizerWidget::resizeEvent(QResizeEvent *event)

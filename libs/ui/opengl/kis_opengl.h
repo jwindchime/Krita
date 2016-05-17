@@ -61,7 +61,8 @@ public:
      */
     static bool needsFenceWorkaround();
 
-    static bool hasOpenGL() { return true; }
+    static bool hasOpenGL();
+
 private:
     KisOpenGL();
 
