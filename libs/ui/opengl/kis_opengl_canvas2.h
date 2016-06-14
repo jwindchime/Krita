@@ -22,6 +22,7 @@
 
 #include "paintengine/qopenglwidget.h"
 #include <QOpenGLFunctions>
+#include <qopenglvertexarrayobject.h>
 
 #include "canvas/kis_canvas_widget_base.h"
 #include "opengl/kis_opengl_image_textures.h"
@@ -109,6 +110,7 @@ private:
     Private * const d;
 
     GLuint *vboHandles;
+    QOpenGLVertexArrayObject* vao;
 };
 
 #endif // KIS_OPENGL_CANVAS_2_H

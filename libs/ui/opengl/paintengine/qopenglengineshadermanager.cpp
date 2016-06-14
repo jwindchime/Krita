@@ -678,11 +678,12 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
     requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::InvalidSnippetName;
     requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::InvalidSnippetName;
     bool isAffine = brushTransform.isAffine();
+qDebug() << "PIXEL TYPE: " << srcPixelType;
     if ( (srcPixelType >= Qt::Dense1Pattern) && (srcPixelType <= Qt::DiagCrossPattern) ) {
-        if (isAffine)
-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::AffinePositionWithPatternBrushVertexShader;
-        else
-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionWithPatternBrushVertexShader;
+        if (isAffine) {
+            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::AffinePositionWithPatternBrushVertexShader; qDebug() << "THIS 11"; }
+        else {
+            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionWithPatternBrushVertexShader; qDebug() << "THIS 12"; }
 
         requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::PatternBrushSrcFragmentShader;
     }
@@ -693,27 +694,27 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
             break;
         case QOpenGLEngineShaderManager::ImageSrc:
             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::ImageSrcFragmentShader;
-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
+            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 13";
             texCoords = true;
             break;
         case QOpenGLEngineShaderManager::NonPremultipliedImageSrc:
             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::NonPremultipliedImageSrcFragmentShader;
-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
+            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 14";
             texCoords = true;
             break;
         case QOpenGLEngineShaderManager::GrayscaleImageSrc:
             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::GrayscaleImageSrcFragmentShader;
-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
+            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 15";
             texCoords = true;
             break;
         case QOpenGLEngineShaderManager::AlphaImageSrc:
             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::AlphaImageSrcFragmentShader;
-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
+            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 16";
             texCoords = true;
             break;
         case QOpenGLEngineShaderManager::PatternSrc:
             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::ImageSrcWithPatternFragmentShader;
-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
+            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 17";
             texCoords = true;
             break;
         case QOpenGLEngineShaderManager::TextureSrcWithPattern:
@@ -723,7 +724,7 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
             break;
         case Qt::SolidPattern:
             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::SolidBrushSrcFragmentShader;
-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
+            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 18";
             break;
         case Qt::LinearGradientPattern:
             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::LinearGradientBrushSrcFragmentShader;
@@ -754,7 +755,8 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
 
     const bool hasCompose = compositionMode > QPainter::CompositionMode_Plus;
     const bool hasMask = maskType != QOpenGLEngineShaderManager::NoMask;
-
+qDebug() << "PIXEL TYPE: " << srcPixelType;
+qDebug() << "MAIN FRAG ID: " << QOpenGLEngineSharedShaders::MainFragmentShader;
     // Choose fragment shader main function:
     if (opacityMode == AttributeOpacity) {
         Q_ASSERT(!hasCompose && !hasMask);
@@ -853,7 +855,7 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
     requiredProgram.useTextureCoords = texCoords;
     requiredProgram.useOpacityAttribute = (opacityMode == AttributeOpacity);
     if (complexGeometry && srcPixelType == Qt::SolidPattern) {
-        requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::ComplexGeometryPositionOnlyVertexShader;
+        requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::ComplexGeometryPositionOnlyVertexShader;  qDebug() << "THIS 20";
         requiredProgram.usePmvMatrixAttribute = false;
     } else {
         requiredProgram.usePmvMatrixAttribute = true;
@@ -862,7 +864,9 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
         // non-solid brushes
         complexGeometry = false;
     }
-
+    qDebug() << "MAIN VERTEX SHADER: " << requiredProgram.mainVertexShader;
+    qDebug() << "MAIN FRAGMENT SHADER: " << requiredProgram.mainFragShader;
+qDebug() << "USING CORRECT SHADER PROGRAM";
     // At this point, requiredProgram is fully populated so try to find the program in the cache
     currentShaderProg = sharedShaders->findProgramInCache(requiredProgram);
 

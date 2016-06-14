@@ -55,8 +55,10 @@
 #include <private/qfontengine_p.h>
 #include <private/qdatabuffer_p.h>
 #include <private/qtriangulatingstroker_p.h>
+#include <qopenglvertexarrayobject.h>
 
 #include <private/qopenglextensions_p.h>
+#include <stdio.h>
 
 enum EngineMode {
     ImageDrawingMode,
@@ -186,7 +188,8 @@ public:
             snapToPixelGrid(false),
             nativePaintingActive(false),
             inverseScale(1),
-            lastTextureUnitUsed(QT_UNKNOWN_TEXTURE_UNIT)
+            lastTextureUnitUsed(QT_UNKNOWN_TEXTURE_UNIT),
+            vao(0)
     { }
 
     ~QOpenGL2PaintEngineExPrivate();
@@ -298,6 +301,9 @@ public:
     GLfloat staticVertexCoordinateArray[8];
     GLfloat staticTextureCoordinateArray[8];
 
+    QOpenGLVertexArrayObject* vao;
+    //GLuint vao;
+
     bool snapToPixelGrid;
     bool nativePaintingActive;
     GLfloat pmvMatrix[3][3];
@@ -323,18 +329,21 @@ public:
     const GLfloat *vertexAttribPointers[3];
 };
 
-
 void QOpenGL2PaintEngineExPrivate::setVertexAttributePointer(unsigned int arrayIndex, const GLfloat *pointer)
 {
     Q_ASSERT(arrayIndex < 3);
-    if (pointer == vertexAttribPointers[arrayIndex])
-        return;
+        printf("sVAP Pointer: %p\n", pointer);
+        qDebug() << "Setting attribute1: " << *pointer << " " << funcs.glGetError();
+        if (pointer == vertexAttribPointers[arrayIndex]) {
+            qDebug() << "Setting attribute return" << funcs.glGetError();;return;}
 
+        qDebug() << "Setting attribute2" << funcs.glGetError();
     vertexAttribPointers[arrayIndex] = pointer;
-    if (arrayIndex == QT_OPACITY_ATTR)
-        funcs.glVertexAttribPointer(arrayIndex, 1, GL_FLOAT, GL_FALSE, 0, pointer);
-    else
-        funcs.glVertexAttribPointer(arrayIndex, 2, GL_FLOAT, GL_FALSE, 0, pointer);
+    funcs.glDisable(GL_BLEND);
+    if (arrayIndex == QT_OPACITY_ATTR) {
+        funcs.glVertexAttribPointer(arrayIndex, 1, GL_FLOAT, GL_FALSE, 0, pointer); qDebug() << "Setting attributep1" << funcs.glGetError();}
+    else {
+        funcs.glVertexAttribPointer(arrayIndex, 2, GL_FLOAT, GL_FALSE, 0, 0); qDebug() << "Setting attributep2" << funcs.glGetError();}
 }
 
 QT_END_NAMESPACE

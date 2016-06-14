@@ -636,7 +636,6 @@ void QOpenGL2PaintEngineEx::beginNativePainting()
 #endif // QT_OPENGL_ES_2
 
     d->resetGLState();
-
     // We don't know what texture units and textures the native painting
     // will activate and bind, so we can't assume anything when we return
     // from the native painting.
@@ -672,6 +671,7 @@ void QOpenGL2PaintEngineExPrivate::resetGLState()
         float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
         funcs.glVertexAttrib4fv(3, color);
     }
+    vao->release();
 }
 
 void QOpenGL2PaintEngineEx::endNativePainting()
@@ -759,7 +759,7 @@ void QOpenGL2PaintEngineExPrivate::cleanupVectorPath(QPaintEngineEx *engine, voi
 void QOpenGL2PaintEngineExPrivate::fill(const QVectorPath& path)
 {
     transferMode(BrushDrawingMode);
-
+    qDebug() << "QOpenGL2PaintEngineExPrivate::fill";
     if (snapToPixelGrid) {
         snapToPixelGrid = false;
         matrixDirty = true;
@@ -1221,8 +1221,41 @@ bool QOpenGL2PaintEngineExPrivate::prepareForDraw(bool srcPixelsAreOpaque)
 void QOpenGL2PaintEngineExPrivate::composite(const QOpenGLRect& boundingRect)
 {
     setCoords(staticVertexCoordinateArray, boundingRect);
+
+    //////////////
+qDebug() << "Pre Fill: " << funcs.glGetError();
+GLint current_vao;
+funcs.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
+qDebug() << "Current Stroke VAO: " << current_vao;
+qDebug() << "Pre Bind error: " << funcs.glGetError();
+    funcs.glEnableVertexAttribArray(0);
+    QOpenGLBuffer buffer1(QOpenGLBuffer::VertexBuffer);
+    buffer1.create();
+    buffer1.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    buffer1.bind();
+// float[] vertices = {
+//
+// }
+    for (int i = 0; i < 8; i++) {
+        qDebug() << staticVertexCoordinateArray[i];
+    }
+qDebug() << "SIZE: " << 8 * sizeof(float);
+    buffer1.allocate(staticVertexCoordinateArray, 8 * sizeof(float));
+qDebug() << "Post Bind error: " << funcs.glGetError();
+GLint current_vbo;
+funcs.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &current_vbo);
+qDebug() << "We are currently using engine VBO: " << current_vbo;
     setVertexAttributePointer(QT_VERTEX_COORDS_ATTR, staticVertexCoordinateArray);
-    funcs.glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+qDebug() << "Post Stroke: " << funcs.glGetError();
+QOpenGLShaderProgram* currentProg = shaderManager->currentProgram();
+qDebug() << "CURR PROG: " << currentProg->log();
+    funcs.glDrawArrays(GL_TRIANGLE_FAN, 0, 8 / 2);
+
+    buffer1.release();
+    /////////////////////
+
+    //setVertexAttributePointer(QT_VERTEX_COORDS_ATTR, staticVertexCoordinateArray);
+    //funcs.glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 // Draws the vertex array as a set of <vertexArrayStops.size()> triangle fans.
@@ -1274,7 +1307,7 @@ Q_GUI_EXPORT bool qt_scaleForTransform(const QTransform &transform, qreal *scale
 void QOpenGL2PaintEngineEx::stroke(const QVectorPath &path, const QPen &pen)
 {
     Q_D(QOpenGL2PaintEngineEx);
-
+    qDebug() << "Entering QOpenGL2PaintEngineEx::stroke";
     const QBrush &penBrush = qpen_brush(pen);
     if (qpen_style(pen) == Qt::NoPen || qbrush_style(penBrush) == Qt::NoBrush)
         return;
@@ -1285,7 +1318,6 @@ void QOpenGL2PaintEngineEx::stroke(const QVectorPath &path, const QPen &pen)
         QPaintEngineEx::stroke(path, pen);
         return;
     }
-
     ensureActive();
     d->setBrush(penBrush);
     d->stroke(path, pen);
@@ -1293,6 +1325,7 @@ void QOpenGL2PaintEngineEx::stroke(const QVectorPath &path, const QPen &pen)
 
 void QOpenGL2PaintEngineExPrivate::stroke(const QVectorPath &path, const QPen &pen)
 {
+    qDebug() << "Entering QOpenGL2PaintEngineExPrivate::stroke";
     const QOpenGL2PaintEngineState *s = q->state();
     if (snapToPixelGrid) {
         snapToPixelGrid = false;
@@ -1314,8 +1347,8 @@ void QOpenGL2PaintEngineExPrivate::stroke(const QVectorPath &path, const QPen &p
                                                         ? q->state()->rectangleClip
                                                         : QRectF(0, 0, width, height));
 
-    if (penStyle == Qt::SolidLine) {
-        stroker.process(path, pen, clip, s->renderHints);
+    if (penStyle == Qt::SolidLine) {qDebug() << "SIZE: " << stroker.vertexCount() * sizeof(float);
+        stroker.process(path, pen, clip, s->renderHints);qDebug() << "POST_SIZE: " << stroker.vertexCount() * sizeof(float);
 
     } else { // Some sort of dash
         dasher.process(path, pen, clip, s->renderHints);
@@ -1332,14 +1365,41 @@ void QOpenGL2PaintEngineExPrivate::stroke(const QVectorPath &path, const QPen &p
 
     if (opaque) {
         prepareForDraw(opaque);
+            qDebug() << "Pre Stroke: " << funcs.glGetError();
+            GLint current_vao;
+            funcs.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
+            qDebug() << "Current Stroke VAO: " << current_vao;
+            qDebug() << "Pre Bind error: " << funcs.glGetError();
+        funcs.glEnableVertexAttribArray(0);
+        QOpenGLBuffer buffer1(QOpenGLBuffer::VertexBuffer);
+        buffer1.create();
+        buffer1.setUsagePattern(QOpenGLBuffer::StaticDraw);
+        buffer1.bind();
+        // float[] vertices = {
+        //
+        // }
+        // for (int i = 0; i < stroker.vertexCount(); i++) {
+        //     qDebug() << stroker.vertices()[i];
+        // }
+
+        buffer1.allocate(stroker.vertices(), stroker.vertexCount() * sizeof(float));
+            qDebug() << "Post Bind error: " << funcs.glGetError();
+            GLint current_vbo;
+            funcs.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &current_vbo);
+            qDebug() << "We are currently using engine VBO: " << current_vbo;
         setVertexAttributePointer(QT_VERTEX_COORDS_ATTR, stroker.vertices());
+            qDebug() << "Post Stroke: " << funcs.glGetError();
+            QOpenGLShaderProgram* currentProg = shaderManager->currentProgram();
+            qDebug() << "CURR PROG: " << currentProg->log();
         funcs.glDrawArrays(GL_TRIANGLE_STRIP, 0, stroker.vertexCount() / 2);
+
+        buffer1.release();
 
 //         QBrush b(Qt::green);
 //         d->setBrush(&b);
 //         d->prepareForDraw(true);
 //         glDrawArrays(GL_LINE_STRIP, 0, d->stroker.vertexCount() / 2);
-
+//exit(1);
     } else {
         qreal width = qpen_widthf(pen) / 2;
         if (width == 0)
@@ -2066,6 +2126,8 @@ void QOpenGL2PaintEngineExPrivate::drawPixmapFragments(const QPainter::PixmapFra
     funcs.glDrawArrays(GL_TRIANGLES, 0, 6 * fragmentCount);
 }
 
+typedef GLenum (*PglGetError) ();
+
 bool QOpenGL2PaintEngineEx::begin(QPaintDevice *pdev)
 {
     Q_D(QOpenGL2PaintEngineEx);
@@ -2082,13 +2144,37 @@ bool QOpenGL2PaintEngineEx::begin(QPaintDevice *pdev)
         qWarning("QPainter::begin(): QOpenGLPaintDevice's context needs to be current");
         return false;
     }
-
     d->ctx = QOpenGLContext::currentContext();
     d->ctx->d_func()->active_engine = this;
 
     QOpenGLPaintDevicePrivate::get(d->device)->beginPaint();
 
     d->funcs.initializeOpenGLFunctions();
+//    qDebug() << "We have no vao yet, so it's: " << d->vao;
+
+    if (d->vao == nullptr) {
+        //d->funcs.glGenVertexArrays(1, &d->vao);
+        d->vao = new QOpenGLVertexArrayObject();
+        d->vao->create();
+        qDebug() << "We generate a new VAO for the engine: " << d->vao->objectId();
+    }
+
+    //d->vao = new QOpenGLVertexArrayObject();
+    //d->vao
+    //d->funcs.glBindVertexArray(d->vao);
+    d->vao->bind();
+    qDebug() << "We bound our engine vao with error: " << d->funcs.glGetError();
+
+    GLint current_vao;
+    d->funcs.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
+    qDebug() << "We are currently using engine VAO: " << current_vao;
+
+    // GLuint vao;
+    // d->funcs.glGenVertexArrays(1, &vao);
+    // qDebug() << "Vao: " << vao;
+    // d->funcs.glBindVertexArray(vao);
+
+
 
     for (int i = 0; i < QT_GL_VERTEX_ARRAY_TRACKED_COUNT; ++i)
         d->vertexAttributeArraysEnabledState[i] = false;
@@ -2170,7 +2256,7 @@ void QOpenGL2PaintEngineEx::ensureActive()
 {
     Q_D(QOpenGL2PaintEngineEx);
     QOpenGLContext *ctx = d->ctx;
-
+    d->vao->bind();
     if (isActive() && ctx->d_func()->active_engine != this) {
         ctx->d_func()->active_engine = this;
         d->needsSync = true;

@@ -33,6 +33,8 @@
 
 #include "qtriangulatingstroker_p.h"
 #include <qmath.h>
+#include <QDebug>
+#include <cstdio>
 
 QT_BEGIN_NAMESPACE
 
@@ -78,6 +80,9 @@ void QTriangulatingStroker::process(const QVectorPath &path, const QPen &pen, co
     const qreal *pts = path.points();
     const QPainterPath::ElementType *types = path.elements();
     int count = path.elementCount();
+    qDebug() << "ElementCount" << count;
+    printf("ElementType: %d\n", !types);
+
     if (count < 2)
         return;
 
@@ -161,19 +166,25 @@ void QTriangulatingStroker::process(const QVectorPath &path, const QPen &pen, co
         if (endsAtStart || path.hasImplicitClose())
             m_cap_style = Qt::FlatCap;
         moveTo(pts);
+qDebug() << "m_vertices SIZE MOVE: " << vertexCount();
         m_cap_style = cap;
         pts += 2;
         skipDuplicatePoints(&pts, endPts);
         lineTo(pts);
         pts += 2;
         skipDuplicatePoints(&pts, endPts);
+
         while (pts < endPts) {
             join(pts);
+qDebug() << "m_vertices SIZE JOIN: " << vertexCount();
             lineTo(pts);
+
             pts += 2;
             skipDuplicatePoints(&pts, endPts);
         }
+
         endCapOrJoinClosed(startPts, pts-2, path.hasImplicitClose(), endsAtStart);
+qDebug() << "m_vertices SIZE END: " << vertexCount();
 
     } else {
         bool endsAtStart = false;
@@ -254,8 +265,7 @@ void QTriangulatingStroker::moveTo(const qreal *pts)
     float y2 = pts[3];
     normalVector(m_cx, m_cy, x2, y2, &m_nvx, &m_nvy);
 
-
-    // To acheive jumps we insert zero-area tringles. This is done by
+    // To achieve jumps we insert zero-area tringles. This is done by
     // adding two identical points in both the end of previous strip
     // and beginning of next strip
     bool invisibleJump = m_vertices.size();
@@ -345,6 +355,7 @@ void QTriangulatingStroker::join(const qreal *pts)
 {
     // Creates a join to the next segment (m_cx, m_cy) -> (pts[0], pts[1])
     normalVector(m_cx, m_cy, pts[0], pts[1], &m_nvx, &m_nvy);
+    qDebug() << m_cx << " " << m_cy << " " << m_nvx << " " << m_nvy;
 
     switch (m_join_style) {
     case Qt::BevelJoin:
@@ -604,4 +615,3 @@ void QDashedStrokeProcessor::process(const QVectorPath &path, const QPen &pen, c
 }
 
 QT_END_NAMESPACE
-

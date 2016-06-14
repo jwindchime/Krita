@@ -51,9 +51,11 @@ void KisOpenGL::initialize()
     format.setStencilBufferSize(8);
 
     if (cfg.openGLVersion() == 0) {
+        qDebug() <<  "USING OPENGL VERSION 2.1";
         format.setVersion(2, 1);
     }
     else {
+        qDebug() <<  "USING OPENGL VERSION 3.2";
         format.setVersion(3, 2);
         format.setProfile(QSurfaceFormat::CoreProfile);
     }

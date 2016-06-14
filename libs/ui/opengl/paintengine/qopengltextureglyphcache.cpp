@@ -162,7 +162,7 @@ void QOpenGLTextureGlyphCache::createTextureData(int width, int height)
     }
 
     if (!m_vao.isCreated())
-        m_vao.create();
+        m_vao.create(); qDebug() << "Glyph VAO";
 }
 
 void QOpenGLTextureGlyphCache::setupVertexAttribs()

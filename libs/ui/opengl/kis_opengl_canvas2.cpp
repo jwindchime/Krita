@@ -256,6 +256,7 @@ void KisOpenGLCanvas2::initializeGL()
 //        }
 //    }
 
+
     KisConfig cfg;
     dbgOpenGL << "OpenGL: Preparing to initialize OpenGL for KisCanvas";
     int glVersion = KisOpenGL::initializeContext(context());
@@ -267,11 +268,19 @@ void KisOpenGLCanvas2::initializeGL()
 
     d->openGLImageTextures->initGL(context()->functions());
     d->openGLImageTextures->generateCheckerTexture(createCheckersImage(cfg.checkSize()));
-    GLuint vao;
+
+
     PglGenVertexArrays glGenVertexArrays = (PglGenVertexArrays) context()->getProcAddress("glGenVertexArrays");
     PglBindVertexArray glBindVertexArray = (PglBindVertexArray) context()->getProcAddress("glBindVertexArray");
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+
+    vao = new QOpenGLVertexArrayObject();
+    vao->create();
+    vao->bind();
+    //QOpenGLVertexArrayObject::Binder vaoBinder(d->vao.data());
+
+    // glBindVertexArray(vao);
+
+// qDebug() << "Generated : " << vao;
 
     glEnableVertexAttribArray(PROGRAM_VERTEX_ATTRIBUTE);
     glEnableVertexAttribArray(PROGRAM_TEXCOORD_ATTRIBUTE);
@@ -303,21 +312,26 @@ void KisOpenGLCanvas2::initializeGL()
     glBindBuffer(GL_ARRAY_BUFFER, vboHandles[0]);
     glBufferData(GL_ARRAY_BUFFER, 6*3*sizeof(float), d->vertices, QOpenGLBuffer::StaticDraw);
 
+    GLint current_vao;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
+    qDebug() << "Current VAO: " << current_vao;
     //glBindBuffer(GL_ARRAY_BUFFER, vboHandles[2]);
     //glBufferData(GL_ARRAY_BUFFER, 3*sizeof(float), d->toolVertices.constData(), QOpenGLBuffer::StreamDraw);
-
+    qDebug() << "Initialize2: " << glGetError();
     glVertexAttribPointer(PROGRAM_VERTEX_ATTRIBUTE, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vboHandles[1]);
+    qDebug() << "Initialize3: " << glGetError();
+    glBindBuffer(GL_ARRAY_BUFFER, vboHandles[1]);qDebug() << "Initialize4: " << glGetError();
     glBufferData(GL_ARRAY_BUFFER, 6*2*sizeof(float), d->texCoords, QOpenGLBuffer::StaticDraw);
-
+    qDebug() << "Initialize5: " << glGetError();
     glVertexAttribPointer(PROGRAM_TEXCOORD_ATTRIBUTE, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     ptr_glLogicOp = (kis_glLogicOp)(context()->getProcAddress("glLogicOp"));
 
     Sync::init(context());
 
     d->canvasInitialized = true;
+    vao->release();//glBindVertexArray(0);
 }
 
 void KisOpenGLCanvas2::resizeGL(int width, int height)
@@ -332,21 +346,36 @@ void KisOpenGLCanvas2::paintGL()
         KisConfig cfg;
         cfg.writeEntry("canvasState", "OPENGL_PAINT_STARTED");
     }
-
+    qDebug() << "PaintGL ENTER: " << glGetError();
     KisOpenglCanvasDebugger::instance()->nofityPaintRequested();
-
+    //PglGenVertexArrays glGenVertexArrays = (PglGenVertexArrays) context()->getProcAddress("glGenVertexArrays");
+    PglBindVertexArray glBindVertexArray = (PglBindVertexArray) context()->getProcAddress("glBindVertexArray");
+    //glBindVertexArray(1);
+    vao->bind();
     renderCanvasGL();
+    vao->release();
 
     if (d->glSyncObject) {
         Sync::deleteSync(d->glSyncObject);
     }
     d->glSyncObject = Sync::getSync();
 
-/*
+    qDebug() << "Entering QPainter";
     QPainter gc(this);
-    renderDecorations(&gc);
+    //renderDecorations(&gc);
+    qDebug() << "Entering Draw";
+    QPen pen;
+    pen.setWidth(3);
+    pen.setJoinStyle(Qt::RoundJoin);
+    //pen.setStyle(Qt::DashDotLine);
+    pen.setBrush(Qt::green);
+    gc.setPen(pen);
+    gc.drawRect(200, 200, 100, 100);
+    //gc.fillRect(200, 200, 200, 200, Qt::green);
+    qDebug() << "Exiting Draw";
+    qDebug() << "PaintGL EXIT: " << glGetError();
     gc.end();
-*/
+    qDebug() << "Exiting QPainter";
 
     if (!OPENGL_SUCCESS) {
         KisConfig cfg;
@@ -475,12 +504,10 @@ void KisOpenGLCanvas2::drawCheckers()
 
     //Setup the geometry for rendering
     rectToVertices(d->vertices, modelRect);
-
     glBindBuffer(GL_ARRAY_BUFFER, vboHandles[0]);
     glBufferSubData(GL_ARRAY_BUFFER, 0, 3*6*sizeof(float), d->vertices);
 
     rectToTexCoords(d->texCoords, textureRect);
-
     glBindBuffer(GL_ARRAY_BUFFER, vboHandles[1]);
     glBufferSubData(GL_ARRAY_BUFFER, 0, 2*6*sizeof(float), d->texCoords);
 
@@ -492,6 +519,7 @@ void KisOpenGLCanvas2::drawCheckers()
 
     glBindTexture(GL_TEXTURE_2D, 0);
     d->checkerShader->release();
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void KisOpenGLCanvas2::drawImage()
@@ -663,6 +691,7 @@ void KisOpenGLCanvas2::drawImage()
 
     glBindTexture(GL_TEXTURE_2D, 0);
     d->displayShader->release();
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void KisOpenGLCanvas2::reportShaderLinkFailedAndExit(bool result, const QString &context, const QString &log)

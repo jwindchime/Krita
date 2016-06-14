@@ -1,0 +1,638 @@
+diff --git a/libs/ui/canvas/kis_canvas2.cpp b/libs/ui/canvas/kis_canvas2.cpp
+index de4a805..eff8847 100644
+--- a/libs/ui/canvas/kis_canvas2.cpp
++++ b/libs/ui/canvas/kis_canvas2.cpp
+@@ -149,7 +149,7 @@ void KisCanvas2::setup()
+     m_d->vastScrolling = cfg.vastScrolling();
+     m_d->lodAllowedInCanvas = cfg.levelOfDetailEnabled();
+ 
+-    createCanvas(cfg.useOpenGL());
++    createCanvas(true);
+ 
+     setLodAllowedInCanvas(m_d->lodAllowedInCanvas);
+     m_d->animationPlayer = new KisAnimationPlayer(this);
+@@ -418,11 +418,11 @@ void KisCanvas2::createCanvas(bool useOpenGL)
+ 
+     if (useOpenGL) {
+         createOpenGLCanvas();
+-        if (cfg.canvasState() == "OPENGL_FAILED") {
+-            // Creating the opengl canvas failed, fall back
+-            warnKrita << "OpenGL Canvas initialization returned OPENGL_FAILED. Falling back to QPainter.";
+-            createQPainterCanvas();
+-        }
++        //if (cfg.canvasState() == "OPENGL_FAILED") {
++        //    // Creating the opengl canvas failed, fall back
++        //    warnKrita << "OpenGL Canvas initialization returned OPENGL_FAILED. Falling back to QPainter.";
++        //    createQPainterCanvas();
++        //}
+ 
+     }
+     else {
+diff --git a/libs/ui/opengl/kis_opengl.cpp b/libs/ui/opengl/kis_opengl.cpp
+index 26636e4..72d1598 100644
+--- a/libs/ui/opengl/kis_opengl.cpp
++++ b/libs/ui/opengl/kis_opengl.cpp
+@@ -51,9 +51,11 @@ void KisOpenGL::initialize()
+     format.setStencilBufferSize(8);
+ 
+     if (cfg.openGLVersion() == 0) {
++        qDebug() <<  "USING OPENGL VERSION 2.1";
+         format.setVersion(2, 1);
+     }
+     else {
++        qDebug() <<  "USING OPENGL VERSION 3.2";
+         format.setVersion(3, 2);
+         format.setProfile(QSurfaceFormat::CoreProfile);
+     }
+diff --git a/libs/ui/opengl/kis_opengl_canvas2.cpp b/libs/ui/opengl/kis_opengl_canvas2.cpp
+index 9d1a0c6..19909ac 100644
+--- a/libs/ui/opengl/kis_opengl_canvas2.cpp
++++ b/libs/ui/opengl/kis_opengl_canvas2.cpp
+@@ -256,6 +256,7 @@ void KisOpenGLCanvas2::initializeGL()
+ //        }
+ //    }
+ 
++
+     KisConfig cfg;
+     dbgOpenGL << "OpenGL: Preparing to initialize OpenGL for KisCanvas";
+     int glVersion = KisOpenGL::initializeContext(context());
+@@ -267,11 +268,19 @@ void KisOpenGLCanvas2::initializeGL()
+ 
+     d->openGLImageTextures->initGL(context()->functions());
+     d->openGLImageTextures->generateCheckerTexture(createCheckersImage(cfg.checkSize()));
+-    GLuint vao;
++
++
+     PglGenVertexArrays glGenVertexArrays = (PglGenVertexArrays) context()->getProcAddress("glGenVertexArrays");
+     PglBindVertexArray glBindVertexArray = (PglBindVertexArray) context()->getProcAddress("glBindVertexArray");
+-    glGenVertexArrays(1, &vao);
+-    glBindVertexArray(vao);
++
++    vao = new QOpenGLVertexArrayObject();
++    vao->create();
++    vao->bind();
++    //QOpenGLVertexArrayObject::Binder vaoBinder(d->vao.data());
++
++    // glBindVertexArray(vao);
++
++// qDebug() << "Generated : " << vao;
+ 
+     glEnableVertexAttribArray(PROGRAM_VERTEX_ATTRIBUTE);
+     glEnableVertexAttribArray(PROGRAM_TEXCOORD_ATTRIBUTE);
+@@ -303,21 +312,26 @@ void KisOpenGLCanvas2::initializeGL()
+     glBindBuffer(GL_ARRAY_BUFFER, vboHandles[0]);
+     glBufferData(GL_ARRAY_BUFFER, 6*3*sizeof(float), d->vertices, QOpenGLBuffer::StaticDraw);
+ 
++    GLint current_vao;
++    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
++    qDebug() << "Current VAO: " << current_vao;
+     //glBindBuffer(GL_ARRAY_BUFFER, vboHandles[2]);
+     //glBufferData(GL_ARRAY_BUFFER, 3*sizeof(float), d->toolVertices.constData(), QOpenGLBuffer::StreamDraw);
+-
++    qDebug() << "Initialize2: " << glGetError();
+     glVertexAttribPointer(PROGRAM_VERTEX_ATTRIBUTE, 3, GL_FLOAT, GL_FALSE, 0, 0);
+-
+-    glBindBuffer(GL_ARRAY_BUFFER, vboHandles[1]);
++    qDebug() << "Initialize3: " << glGetError();
++    glBindBuffer(GL_ARRAY_BUFFER, vboHandles[1]);qDebug() << "Initialize4: " << glGetError();
+     glBufferData(GL_ARRAY_BUFFER, 6*2*sizeof(float), d->texCoords, QOpenGLBuffer::StaticDraw);
+-
++    qDebug() << "Initialize5: " << glGetError();
+     glVertexAttribPointer(PROGRAM_TEXCOORD_ATTRIBUTE, 2, GL_FLOAT, GL_FALSE, 0, 0);
++    glBindBuffer(GL_ARRAY_BUFFER, 0);
+ 
+     ptr_glLogicOp = (kis_glLogicOp)(context()->getProcAddress("glLogicOp"));
+ 
+     Sync::init(context());
+ 
+     d->canvasInitialized = true;
++    vao->release();//glBindVertexArray(0);
+ }
+ 
+ void KisOpenGLCanvas2::resizeGL(int width, int height)
+@@ -332,21 +346,37 @@ void KisOpenGLCanvas2::paintGL()
+         KisConfig cfg;
+         cfg.writeEntry("canvasState", "OPENGL_PAINT_STARTED");
+     }
+-
++    qDebug() << "PaintGL ENTER: " << glGetError();
+     KisOpenglCanvasDebugger::instance()->nofityPaintRequested();
+-
++    //PglGenVertexArrays glGenVertexArrays = (PglGenVertexArrays) context()->getProcAddress("glGenVertexArrays");
++    PglBindVertexArray glBindVertexArray = (PglBindVertexArray) context()->getProcAddress("glBindVertexArray");
++    //glBindVertexArray(1);
++    vao->bind();
+     renderCanvasGL();
++    vao->release();
+ 
+     if (d->glSyncObject) {
+         Sync::deleteSync(d->glSyncObject);
+     }
+     d->glSyncObject = Sync::getSync();
+ 
+-/*
++
++    qDebug() << "Entering QPainter";
+     QPainter gc(this);
+-    renderDecorations(&gc);
++    //renderDecorations(&gc);
++    qDebug() << "Entering Draw";
++    QPen pen;
++    pen.setWidth(3);
++    pen.setJoinStyle(Qt::RoundJoin);
++    //pen.setStyle(Qt::DashDotLine);
++    pen.setBrush(Qt::green);
++    gc.setPen(pen);
++    gc.drawRect(200, 200, 100, 100);
++    //gc.fillRect(200, 200, 200, 200, Qt::green);
++    qDebug() << "Exiting Draw";
++    qDebug() << "PaintGL EXIT: " << glGetError();
+     gc.end();
+-*/
++    qDebug() << "Exiting QPainter";
+ 
+     if (!OPENGL_SUCCESS) {
+         KisConfig cfg;
+@@ -492,6 +522,7 @@ void KisOpenGLCanvas2::drawCheckers()
+ 
+     glBindTexture(GL_TEXTURE_2D, 0);
+     d->checkerShader->release();
++    glBindBuffer(GL_ARRAY_BUFFER, 0);
+ }
+ 
+ void KisOpenGLCanvas2::drawImage()
+@@ -663,6 +694,7 @@ void KisOpenGLCanvas2::drawImage()
+ 
+     glBindTexture(GL_TEXTURE_2D, 0);
+     d->displayShader->release();
++    glBindBuffer(GL_ARRAY_BUFFER, 0);
+ }
+ 
+ void KisOpenGLCanvas2::reportShaderLinkFailedAndExit(bool result, const QString &context, const QString &log)
+diff --git a/libs/ui/opengl/kis_opengl_canvas2.h b/libs/ui/opengl/kis_opengl_canvas2.h
+index 14188a4..32e0292 100644
+--- a/libs/ui/opengl/kis_opengl_canvas2.h
++++ b/libs/ui/opengl/kis_opengl_canvas2.h
+@@ -22,6 +22,7 @@
+ 
+ #include "paintengine/qopenglwidget.h"
+ #include <QOpenGLFunctions>
++#include <qopenglvertexarrayobject.h>
+ 
+ #include "canvas/kis_canvas_widget_base.h"
+ #include "opengl/kis_opengl_image_textures.h"
+@@ -109,6 +110,7 @@ private:
+     Private * const d;
+ 
+     GLuint *vboHandles;
++    QOpenGLVertexArrayObject* vao;
+ };
+ 
+ #endif // KIS_OPENGL_CANVAS_2_H
+diff --git a/libs/ui/opengl/paintengine/qopenglengineshadermanager.cpp b/libs/ui/opengl/paintengine/qopenglengineshadermanager.cpp
+index 40f4ce9..3b5f737 100644
+--- a/libs/ui/opengl/paintengine/qopenglengineshadermanager.cpp
++++ b/libs/ui/opengl/paintengine/qopenglengineshadermanager.cpp
+@@ -678,11 +678,12 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
+     requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::InvalidSnippetName;
+     requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::InvalidSnippetName;
+     bool isAffine = brushTransform.isAffine();
++qDebug() << "PIXEL TYPE: " << srcPixelType;
+     if ( (srcPixelType >= Qt::Dense1Pattern) && (srcPixelType <= Qt::DiagCrossPattern) ) {
+-        if (isAffine)
+-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::AffinePositionWithPatternBrushVertexShader;
+-        else
+-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionWithPatternBrushVertexShader;
++        if (isAffine) {
++            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::AffinePositionWithPatternBrushVertexShader; qDebug() << "THIS 11"; }
++        else {
++            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionWithPatternBrushVertexShader; qDebug() << "THIS 12"; }
+ 
+         requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::PatternBrushSrcFragmentShader;
+     }
+@@ -693,27 +694,27 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
+             break;
+         case QOpenGLEngineShaderManager::ImageSrc:
+             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::ImageSrcFragmentShader;
+-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
++            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 13";
+             texCoords = true;
+             break;
+         case QOpenGLEngineShaderManager::NonPremultipliedImageSrc:
+             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::NonPremultipliedImageSrcFragmentShader;
+-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
++            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 14";
+             texCoords = true;
+             break;
+         case QOpenGLEngineShaderManager::GrayscaleImageSrc:
+             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::GrayscaleImageSrcFragmentShader;
+-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
++            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 15";
+             texCoords = true;
+             break;
+         case QOpenGLEngineShaderManager::AlphaImageSrc:
+             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::AlphaImageSrcFragmentShader;
+-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
++            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 16";
+             texCoords = true;
+             break;
+         case QOpenGLEngineShaderManager::PatternSrc:
+             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::ImageSrcWithPatternFragmentShader;
+-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
++            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 17";
+             texCoords = true;
+             break;
+         case QOpenGLEngineShaderManager::TextureSrcWithPattern:
+@@ -723,7 +724,7 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
+             break;
+         case Qt::SolidPattern:
+             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::SolidBrushSrcFragmentShader;
+-            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader;
++            requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::PositionOnlyVertexShader; qDebug() << "THIS 18";
+             break;
+         case Qt::LinearGradientPattern:
+             requiredProgram.srcPixelFragShader = QOpenGLEngineSharedShaders::LinearGradientBrushSrcFragmentShader;
+@@ -754,7 +755,8 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
+ 
+     const bool hasCompose = compositionMode > QPainter::CompositionMode_Plus;
+     const bool hasMask = maskType != QOpenGLEngineShaderManager::NoMask;
+-
++qDebug() << "PIXEL TYPE: " << srcPixelType;
++qDebug() << "MAIN FRAG ID: " << QOpenGLEngineSharedShaders::MainFragmentShader;
+     // Choose fragment shader main function:
+     if (opacityMode == AttributeOpacity) {
+         Q_ASSERT(!hasCompose && !hasMask);
+@@ -853,7 +855,7 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
+     requiredProgram.useTextureCoords = texCoords;
+     requiredProgram.useOpacityAttribute = (opacityMode == AttributeOpacity);
+     if (complexGeometry && srcPixelType == Qt::SolidPattern) {
+-        requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::ComplexGeometryPositionOnlyVertexShader;
++        requiredProgram.positionVertexShader = QOpenGLEngineSharedShaders::ComplexGeometryPositionOnlyVertexShader;  qDebug() << "THIS 20";
+         requiredProgram.usePmvMatrixAttribute = false;
+     } else {
+         requiredProgram.usePmvMatrixAttribute = true;
+@@ -862,7 +864,9 @@ bool QOpenGLEngineShaderManager::useCorrectShaderProg()
+         // non-solid brushes
+         complexGeometry = false;
+     }
+-
++    qDebug() << "MAIN VERTEX SHADER: " << requiredProgram.mainVertexShader;
++    qDebug() << "MAIN FRAGMENT SHADER: " << requiredProgram.mainFragShader;
++qDebug() << "USING CORRECT SHADER PROGRAM";
+     // At this point, requiredProgram is fully populated so try to find the program in the cache
+     currentShaderProg = sharedShaders->findProgramInCache(requiredProgram);
+ 
+diff --git a/libs/ui/opengl/paintengine/qopenglpaintengine.cpp b/libs/ui/opengl/paintengine/qopenglpaintengine.cpp
+index ca615f1..b08a095 100644
+--- a/libs/ui/opengl/paintengine/qopenglpaintengine.cpp
++++ b/libs/ui/opengl/paintengine/qopenglpaintengine.cpp
+@@ -636,7 +636,6 @@ void QOpenGL2PaintEngineEx::beginNativePainting()
+ #endif // QT_OPENGL_ES_2
+ 
+     d->resetGLState();
+-
+     // We don't know what texture units and textures the native painting
+     // will activate and bind, so we can't assume anything when we return
+     // from the native painting.
+@@ -672,6 +671,7 @@ void QOpenGL2PaintEngineExPrivate::resetGLState()
+         float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+         funcs.glVertexAttrib4fv(3, color);
+     }
++    vao->release();
+ }
+ 
+ void QOpenGL2PaintEngineEx::endNativePainting()
+@@ -759,7 +759,7 @@ void QOpenGL2PaintEngineExPrivate::cleanupVectorPath(QPaintEngineEx *engine, voi
+ void QOpenGL2PaintEngineExPrivate::fill(const QVectorPath& path)
+ {
+     transferMode(BrushDrawingMode);
+-
++    qDebug() << "QOpenGL2PaintEngineExPrivate::fill";
+     if (snapToPixelGrid) {
+         snapToPixelGrid = false;
+         matrixDirty = true;
+@@ -1221,8 +1221,41 @@ bool QOpenGL2PaintEngineExPrivate::prepareForDraw(bool srcPixelsAreOpaque)
+ void QOpenGL2PaintEngineExPrivate::composite(const QOpenGLRect& boundingRect)
+ {
+     setCoords(staticVertexCoordinateArray, boundingRect);
++
++    //////////////
++qDebug() << "Pre Fill: " << funcs.glGetError();
++GLint current_vao;
++funcs.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
++qDebug() << "Current Stroke VAO: " << current_vao;
++qDebug() << "Pre Bind error: " << funcs.glGetError();
++    funcs.glEnableVertexAttribArray(0);
++    QOpenGLBuffer buffer1(QOpenGLBuffer::VertexBuffer);
++    buffer1.create();
++    buffer1.setUsagePattern(QOpenGLBuffer::StaticDraw);
++    buffer1.bind();
++// float[] vertices = {
++//
++// }
++    for (int i = 0; i < 8; i++) {
++        qDebug() << staticVertexCoordinateArray[i];
++    }
++qDebug() << "SIZE: " << 8 * sizeof(float);
++    buffer1.allocate(staticVertexCoordinateArray, 8 * sizeof(float));
++qDebug() << "Post Bind error: " << funcs.glGetError();
++GLint current_vbo;
++funcs.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &current_vbo);
++qDebug() << "We are currently using engine VBO: " << current_vbo;
+     setVertexAttributePointer(QT_VERTEX_COORDS_ATTR, staticVertexCoordinateArray);
+-    funcs.glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
++qDebug() << "Post Stroke: " << funcs.glGetError();
++QOpenGLShaderProgram* currentProg = shaderManager->currentProgram();
++qDebug() << "CURR PROG: " << currentProg->log();
++    funcs.glDrawArrays(GL_TRIANGLE_FAN, 0, 8 / 2);
++
++    buffer1.release();
++    /////////////////////
++
++    //setVertexAttributePointer(QT_VERTEX_COORDS_ATTR, staticVertexCoordinateArray);
++    //funcs.glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+ }
+ 
+ // Draws the vertex array as a set of <vertexArrayStops.size()> triangle fans.
+@@ -1274,7 +1307,7 @@ Q_GUI_EXPORT bool qt_scaleForTransform(const QTransform &transform, qreal *scale
+ void QOpenGL2PaintEngineEx::stroke(const QVectorPath &path, const QPen &pen)
+ {
+     Q_D(QOpenGL2PaintEngineEx);
+-
++    qDebug() << "Entering QOpenGL2PaintEngineEx::stroke";
+     const QBrush &penBrush = qpen_brush(pen);
+     if (qpen_style(pen) == Qt::NoPen || qbrush_style(penBrush) == Qt::NoBrush)
+         return;
+@@ -1285,7 +1318,6 @@ void QOpenGL2PaintEngineEx::stroke(const QVectorPath &path, const QPen &pen)
+         QPaintEngineEx::stroke(path, pen);
+         return;
+     }
+-
+     ensureActive();
+     d->setBrush(penBrush);
+     d->stroke(path, pen);
+@@ -1293,6 +1325,7 @@ void QOpenGL2PaintEngineEx::stroke(const QVectorPath &path, const QPen &pen)
+ 
+ void QOpenGL2PaintEngineExPrivate::stroke(const QVectorPath &path, const QPen &pen)
+ {
++    qDebug() << "Entering QOpenGL2PaintEngineExPrivate::stroke";
+     const QOpenGL2PaintEngineState *s = q->state();
+     if (snapToPixelGrid) {
+         snapToPixelGrid = false;
+@@ -1314,8 +1347,8 @@ void QOpenGL2PaintEngineExPrivate::stroke(const QVectorPath &path, const QPen &p
+                                                         ? q->state()->rectangleClip
+                                                         : QRectF(0, 0, width, height));
+ 
+-    if (penStyle == Qt::SolidLine) {
+-        stroker.process(path, pen, clip, s->renderHints);
++    if (penStyle == Qt::SolidLine) {qDebug() << "SIZE: " << stroker.vertexCount() * sizeof(float);
++        stroker.process(path, pen, clip, s->renderHints);qDebug() << "POST_SIZE: " << stroker.vertexCount() * sizeof(float);
+ 
+     } else { // Some sort of dash
+         dasher.process(path, pen, clip, s->renderHints);
+@@ -1332,9 +1365,36 @@ void QOpenGL2PaintEngineExPrivate::stroke(const QVectorPath &path, const QPen &p
+ 
+     if (opaque) {
+         prepareForDraw(opaque);
++            qDebug() << "Pre Stroke: " << funcs.glGetError();
++            GLint current_vao;
++            funcs.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
++            qDebug() << "Current Stroke VAO: " << current_vao;
++            qDebug() << "Pre Bind error: " << funcs.glGetError();
++        funcs.glEnableVertexAttribArray(0);
++        QOpenGLBuffer buffer1(QOpenGLBuffer::VertexBuffer);
++        buffer1.create();
++        buffer1.setUsagePattern(QOpenGLBuffer::StaticDraw);
++        buffer1.bind();
++        // float[] vertices = {
++        //
++        // }
++        // for (int i = 0; i < stroker.vertexCount(); i++) {
++        //     qDebug() << stroker.vertices()[i];
++        // }
++
++        buffer1.allocate(stroker.vertices(), stroker.vertexCount() * sizeof(float));
++            qDebug() << "Post Bind error: " << funcs.glGetError();
++            GLint current_vbo;
++            funcs.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &current_vbo);
++            qDebug() << "We are currently using engine VBO: " << current_vbo;
+         setVertexAttributePointer(QT_VERTEX_COORDS_ATTR, stroker.vertices());
++            qDebug() << "Post Stroke: " << funcs.glGetError();
++            QOpenGLShaderProgram* currentProg = shaderManager->currentProgram();
++            qDebug() << "CURR PROG: " << currentProg->log();
+         funcs.glDrawArrays(GL_TRIANGLE_STRIP, 0, stroker.vertexCount() / 2);
+ 
++        buffer1.release();
++
+ //         QBrush b(Qt::green);
+ //         d->setBrush(&b);
+ //         d->prepareForDraw(true);
+@@ -2066,6 +2126,8 @@ void QOpenGL2PaintEngineExPrivate::drawPixmapFragments(const QPainter::PixmapFra
+     funcs.glDrawArrays(GL_TRIANGLES, 0, 6 * fragmentCount);
+ }
+ 
++typedef GLenum (*PglGetError) ();
++
+ bool QOpenGL2PaintEngineEx::begin(QPaintDevice *pdev)
+ {
+     Q_D(QOpenGL2PaintEngineEx);
+@@ -2082,13 +2144,37 @@ bool QOpenGL2PaintEngineEx::begin(QPaintDevice *pdev)
+         qWarning("QPainter::begin(): QOpenGLPaintDevice's context needs to be current");
+         return false;
+     }
+-
+     d->ctx = QOpenGLContext::currentContext();
+     d->ctx->d_func()->active_engine = this;
+ 
+     QOpenGLPaintDevicePrivate::get(d->device)->beginPaint();
+ 
+     d->funcs.initializeOpenGLFunctions();
++//    qDebug() << "We have no vao yet, so it's: " << d->vao;
++
++    if (d->vao == nullptr) {
++        //d->funcs.glGenVertexArrays(1, &d->vao);
++        d->vao = new QOpenGLVertexArrayObject();
++        d->vao->create();
++        qDebug() << "We generate a new VAO for the engine: " << d->vao->objectId();
++    }
++
++    //d->vao = new QOpenGLVertexArrayObject();
++    //d->vao
++    //d->funcs.glBindVertexArray(d->vao);
++    d->vao->bind();
++    qDebug() << "We bound our engine vao with error: " << d->funcs.glGetError();
++
++    GLint current_vao;
++    d->funcs.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &current_vao);
++    qDebug() << "We are currently using engine VAO: " << current_vao;
++
++    // GLuint vao;
++    // d->funcs.glGenVertexArrays(1, &vao);
++    // qDebug() << "Vao: " << vao;
++    // d->funcs.glBindVertexArray(vao);
++
++
+ 
+     for (int i = 0; i < QT_GL_VERTEX_ARRAY_TRACKED_COUNT; ++i)
+         d->vertexAttributeArraysEnabledState[i] = false;
+@@ -2170,7 +2256,7 @@ void QOpenGL2PaintEngineEx::ensureActive()
+ {
+     Q_D(QOpenGL2PaintEngineEx);
+     QOpenGLContext *ctx = d->ctx;
+-
++    d->vao->bind();
+     if (isActive() && ctx->d_func()->active_engine != this) {
+         ctx->d_func()->active_engine = this;
+         d->needsSync = true;
+diff --git a/libs/ui/opengl/paintengine/qopenglpaintengine_p.h b/libs/ui/opengl/paintengine/qopenglpaintengine_p.h
+index 1c15999..bb93e2b 100644
+--- a/libs/ui/opengl/paintengine/qopenglpaintengine_p.h
++++ b/libs/ui/opengl/paintengine/qopenglpaintengine_p.h
+@@ -55,8 +55,10 @@
+ #include <private/qfontengine_p.h>
+ #include <private/qdatabuffer_p.h>
+ #include <private/qtriangulatingstroker_p.h>
++#include <qopenglvertexarrayobject.h>
+ 
+ #include <private/qopenglextensions_p.h>
++#include <stdio.h>
+ 
+ enum EngineMode {
+     ImageDrawingMode,
+@@ -186,7 +188,8 @@ public:
+             snapToPixelGrid(false),
+             nativePaintingActive(false),
+             inverseScale(1),
+-            lastTextureUnitUsed(QT_UNKNOWN_TEXTURE_UNIT)
++            lastTextureUnitUsed(QT_UNKNOWN_TEXTURE_UNIT),
++            vao(0)
+     { }
+ 
+     ~QOpenGL2PaintEngineExPrivate();
+@@ -298,6 +301,9 @@ public:
+     GLfloat staticVertexCoordinateArray[8];
+     GLfloat staticTextureCoordinateArray[8];
+ 
++    QOpenGLVertexArrayObject* vao;
++    //GLuint vao;
++
+     bool snapToPixelGrid;
+     bool nativePaintingActive;
+     GLfloat pmvMatrix[3][3];
+@@ -323,18 +329,21 @@ public:
+     const GLfloat *vertexAttribPointers[3];
+ };
+ 
+-
+ void QOpenGL2PaintEngineExPrivate::setVertexAttributePointer(unsigned int arrayIndex, const GLfloat *pointer)
+ {
+     Q_ASSERT(arrayIndex < 3);
+-    if (pointer == vertexAttribPointers[arrayIndex])
+-        return;
++        printf("sVAP Pointer: %p\n", pointer);
++        qDebug() << "Setting attribute1: " << *pointer << " " << funcs.glGetError();
++        if (pointer == vertexAttribPointers[arrayIndex]) {
++            qDebug() << "Setting attribute return" << funcs.glGetError();;return;}
+ 
++        qDebug() << "Setting attribute2" << funcs.glGetError();
+     vertexAttribPointers[arrayIndex] = pointer;
+-    if (arrayIndex == QT_OPACITY_ATTR)
+-        funcs.glVertexAttribPointer(arrayIndex, 1, GL_FLOAT, GL_FALSE, 0, pointer);
+-    else
+-        funcs.glVertexAttribPointer(arrayIndex, 2, GL_FLOAT, GL_FALSE, 0, pointer);
++    funcs.glDisable(GL_BLEND);
++    if (arrayIndex == QT_OPACITY_ATTR) {
++        funcs.glVertexAttribPointer(arrayIndex, 1, GL_FLOAT, GL_FALSE, 0, pointer); qDebug() << "Setting attributep1" << funcs.glGetError();}
++    else {
++        funcs.glVertexAttribPointer(arrayIndex, 2, GL_FLOAT, GL_FALSE, 0, 0); qDebug() << "Setting attributep2" << funcs.glGetError();}
+ }
+ 
+ QT_END_NAMESPACE
+diff --git a/libs/ui/opengl/paintengine/qopengltextureblitter.cpp b/libs/ui/opengl/paintengine/qopengltextureblitter.cpp
+index 9e611a1..97f3c47 100644
+--- a/libs/ui/opengl/paintengine/qopengltextureblitter.cpp
++++ b/libs/ui/opengl/paintengine/qopengltextureblitter.cpp
+@@ -336,6 +336,7 @@ bool QOpenGLTextureBlitter::create()
+                 return false;
+     }
+ 
++    qDebug() << "Blitter vao: " << d->vao;
+     // Create and bind the VAO, if supported.
+     QOpenGLVertexArrayObject::Binder vaoBinder(d->vao.data());
+ 
+@@ -382,7 +383,7 @@ void QOpenGLTextureBlitter::bind(GLenum target)
+ 
+     if (d->vao->isCreated())
+         d->vao->bind();
+-
++    qDebug() << "BLITTER BIND";
+     d->currentTarget = target;
+     QOpenGLTextureBlitterPrivate::Program *p = &d->programs[targetToProgramIndex(target)];
+     p->glProgram->bind();
+diff --git a/libs/ui/opengl/paintengine/qopengltextureglyphcache.cpp b/libs/ui/opengl/paintengine/qopengltextureglyphcache.cpp
+index 3ab8407..fe24f61 100644
+--- a/libs/ui/opengl/paintengine/qopengltextureglyphcache.cpp
++++ b/libs/ui/opengl/paintengine/qopengltextureglyphcache.cpp
+@@ -162,7 +162,7 @@ void QOpenGLTextureGlyphCache::createTextureData(int width, int height)
+     }
+ 
+     if (!m_vao.isCreated())
+-        m_vao.create();
++        m_vao.create(); qDebug() << "Glyph VAO";
+ }
+ 
+ void QOpenGLTextureGlyphCache::setupVertexAttribs()
+diff --git a/libs/ui/opengl/paintengine/qtriangulatingstroker.cpp b/libs/ui/opengl/paintengine/qtriangulatingstroker.cpp
+index 5967bd6..8744451 100644
+--- a/libs/ui/opengl/paintengine/qtriangulatingstroker.cpp
++++ b/libs/ui/opengl/paintengine/qtriangulatingstroker.cpp
+@@ -33,6 +33,8 @@
+ 
+ #include "qtriangulatingstroker_p.h"
+ #include <qmath.h>
++#include <QDebug>
++#include <cstdio>
+ 
+ QT_BEGIN_NAMESPACE
+ 
+@@ -78,6 +80,9 @@ void QTriangulatingStroker::process(const QVectorPath &path, const QPen &pen, co
+     const qreal *pts = path.points();
+     const QPainterPath::ElementType *types = path.elements();
+     int count = path.elementCount();
++    qDebug() << "ElementCount" << count;
++    printf("ElementType: %d\n", !types);
++
+     if (count < 2)
+         return;
+ 
+@@ -161,19 +166,25 @@ void QTriangulatingStroker::process(const QVectorPath &path, const QPen &pen, co
+         if (endsAtStart || path.hasImplicitClose())
+             m_cap_style = Qt::FlatCap;
+         moveTo(pts);
++qDebug() << "m_vertices SIZE MOVE: " << vertexCount();
+         m_cap_style = cap;
+         pts += 2;
+         skipDuplicatePoints(&pts, endPts);
+         lineTo(pts);
+         pts += 2;
+         skipDuplicatePoints(&pts, endPts);
++
+         while (pts < endPts) {
+             join(pts);
++qDebug() << "m_vertices SIZE JOIN: " << vertexCount();
+             lineTo(pts);
++
+             pts += 2;
+             skipDuplicatePoints(&pts, endPts);
+         }
++
+         endCapOrJoinClosed(startPts, pts-2, path.hasImplicitClose(), endsAtStart);
++qDebug() << "m_vertices SIZE END: " << vertexCount();
+ 
+     } else {
+         bool endsAtStart = false;
+@@ -604,4 +615,3 @@ void QDashedStrokeProcessor::process(const QVectorPath &path, const QPen &pen, c
+ }
+ 
+ QT_END_NAMESPACE
+-
